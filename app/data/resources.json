@@ -1,0 +1,60 @@
+[
+  {
+    "id": 1,
+    "title": "Gastric Cancer Expert System",
+    "description": "A Mamdani fuzzy inference system implemented in MATLAB, utilizing 67 expert-defined rules to assess gastric cancer risk levels. The system processes 13 clinical risk factors to classify individuals into different risk categories, facilitating early detection and treatment.",
+    "performance": {
+      "sensitivity": "92.1%",
+      "specificity": "83.1%",
+      "kappaAgreement": "87%"
+    },
+    "resources": [
+      {
+        "type": "PMC",
+        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5869226/"
+      },
+      {
+        "type": "PubMed",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/29719308/"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Diabetes Expert System",
+    "description": "A fuzzy rule-based system that combines the cosine amplitude method with expert-derived rules to perform early diagnosis of diabetes. Evaluated using the Pima Indians Diabetes dataset, the system demonstrates high accuracy in classification.",
+    "performance": {
+      "accuracy": "96.5%",
+      "dataset": "Biosat Diabetes Dataset"
+    },
+    "resources": [
+      {
+        "type": "PMC",
+        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8659829/"
+      },
+      {
+        "type": "MDPI",
+        "url": "https://www.mdpi.com/1424-8220/21/23/8095"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Heart Disease Expert System",
+    "description": "A Mamdani fuzzy inference system designed to diagnose heart disease by analyzing key cardiovascular indicators. The system integrates clinician-validated IF-THEN rules to provide accurate and cost-effective prognosis.",
+    "performance": {
+      "accuracy": "98.08%",
+      "dataset": "UCI Cleveland Dataset"
+    },
+    "resources": [
+      {
+        "type": "PLOS",
+        "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0293112"
+      },
+      {
+        "type": "PubMed",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/38319925/"
+      }
+    ]
+  }
+]

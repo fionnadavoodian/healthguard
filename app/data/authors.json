@@ -1,0 +1,94 @@
+{
+    "medicalInformaticsExperts": [
+      {
+        "name": "Reza Safdari",
+        "affiliation": "Tehran University of Medical Sciences",
+        "image": "https://randomuser.me/api/portraits/men/90.jpg?gender=male&seed=reza-safdari",
+        "initials": "RS"
+      },
+      {
+        "name": "Hadi Kazemi-Arpanahi",
+        "affiliation": "Abadan University of Medical Sciences",
+        "image": "https://randomuser.me/api/portraits/men/32.jpg?gender=male&seed=hadi-kazemi",
+        "initials": "HK"
+      },
+      {
+        "name": "Mostafa Langarizadeh",
+        "affiliation": "Tehran University of Medical Sciences",
+        "image": "https://randomuser.me/api/portraits/men/45.jpg?gender=male&seed=mostafa-langarizadeh",
+        "initials": "ML"
+      },
+      {
+        "name": "Marjan Ghazisaeedi",
+        "affiliation": "Tehran University of Medical Sciences",
+        "image": "https://randomuser.me/api/portraits/women/68.jpg?gender=female&seed=marjan-ghazisaeedi",
+        "initials": "MG"
+      },
+      {
+        "name": "Hossein Dargahi",
+        "affiliation": "Tehran University of Medical Sciences",
+        "image": "https://randomuser.me/api/portraits/men/22.jpg?gender=male&seed=hossein-dargahi",
+        "initials": "HD"
+      },
+      {
+        "name": "Kazem Zendehdel",
+        "affiliation": "Cancer Research Center, TUMS",
+        "image": "https://randomuser.me/api/portraits/men/87.jpg?gender=male&seed=kazem-zendehdel",
+        "initials": "KZ"
+      }
+    ],
+  
+    "diabetesResearchAuthors": [
+      {
+        "name": "I. K. Mujawar",
+        "affiliation": "Sanjivani College of Engineering",
+        "image": "https://randomuser.me/api/portraits/men/76.jpg?gender=male&seed=mujawar",
+        "initials": "IM"
+      },
+      {
+        "name": "B. T. Jadhav",
+        "affiliation": "Sanjivani College of Engineering",
+        "image": "https://randomuser.me/api/portraits/men/54.jpg?gender=male&seed=jadhav",
+        "initials": "BJ"
+      }
+    ],
+  
+    "heartDiseaseResearchAuthors": [
+      {
+        "name": "A. Alam",
+        "affiliation": "Jamia Millia Islamia",
+        "image": "https://randomuser.me/api/portraits/men/12.jpg?gender=male&seed=a-alam",
+        "initials": "AA"
+      },
+      {
+        "name": "G. Md. Osman Gani",
+        "affiliation": "UMBC",
+        "image": "https://randomuser.me/api/portraits/men/33.jpg?gender=male&seed=osman-gani",
+        "initials": "OG"
+      },
+      {
+        "name": "Mohamed Osman",
+        "affiliation": "Harlem Hospital Center",
+        "image": "https://randomuser.me/api/portraits/men/88.jpg?gender=male&seed=mohamed-osman",
+        "initials": "MO"
+      },
+      {
+        "name": "Md Osman Goni Nayeem",
+        "affiliation": "MIT",
+        "image": "https://randomuser.me/api/portraits/men/65.jpg?gender=male&seed=nayeem",
+        "initials": "MN"
+      },
+      {
+        "name": "Md Osman Goni",
+        "affiliation": "Life and Care Hospital Ltd.",
+        "image": "https://randomuser.me/api/portraits/men/41.jpg?gender=male&seed=md-goni",
+        "initials": "MG"
+      },
+      {
+        "name": "Md Osman Gani", 
+        "affiliation": "Marquette University",
+        "image": "https://randomuser.me/api/portraits/men/29.jpg?gender=male&seed=md-gani",
+        "initials": "MG"
+      }
+    ]
+  }
