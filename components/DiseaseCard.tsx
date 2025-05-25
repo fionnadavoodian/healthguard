@@ -1,7 +1,7 @@
 import React from "react";
 import Card from "./Card";
 import ResourceList from "./ResourceList";
-import { Disease } from "../app/types/disease";
+import { Disease } from "../types/disease";
 
 export function DiseaseCard({ disease }: { disease: Disease }) {
   return (

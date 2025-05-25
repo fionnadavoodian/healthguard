@@ -1,5 +1,5 @@
 import React from "react";
-import { Resource } from "../app/types/disease";
+import { Resource } from "../types/disease";
 
 export default function ResourceList({ resources }: { resources: Resource[] }) {
   if (!resources || resources.length === 0) return null;
