@@ -1,67 +1,26 @@
 import React from "react";
+import { Resource } from "../app/types/disease";
 
-interface Resource {
-  type: string;
-  url: string;
-}
-
-interface ResourceListProps {
-  resources?: Resource[]; // make optional
-}
-
-const ResourceList = ({ resources = [] }: ResourceListProps) => {
-  const getResourceDetails = (type: string) => {
-    switch (type) {
-      case "PMC":
-        return { icon: "🧬", label: "PubMed Central (Full Text)" };
-      case "PubMed":
-        return { icon: "📖", label: "PubMed Abstract" };
-      case "OALib":
-        return { icon: "📚", label: "Open Access Library Entry" };
-      case "ResearchGate":
-        return { icon: "🔬", label: "ResearchGate Article" };
-      case "PLOS":
-        return { icon: "📰", label: "PLOS ONE Journal Article" };
-      case "MDPI":
-        return { icon: "📘", label: "MDPI Journal Article" };
-      default:
-        return { icon: "🌐", label: "External Academic Resource" };
-    }
-  };
-
-  if (resources.length === 0) {
-    return null; // or a placeholder message
-  }
+export default function ResourceList({ resources }: { resources: Resource[] }) {
+  if (!resources || resources.length === 0) return null;
 
   return (
-    <div className="mt-6 pt-4 border-t border-gray-100">
-      <h3 className="text-sm font-semibold text-gray-600 mb-3">
-        Academic Resources
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {resources.map((resource, idx) => {
-          const { icon, label } = getResourceDetails(resource.type);
-          return (
+    <div>
+      <h5 className="font-medium mb-2">Resources</h5>
+      <ul className="list-disc list-inside text-sm text-blue-600 space-y-1">
+        {resources.map((r, index) => (
+          <li key={index}>
             <a
-              key={idx}
-              href={resource.url}
-              className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-200 hover:bg-blue-50 transition-colors"
+              href={r.url}
               target="_blank"
               rel="noopener noreferrer"
+              className="underline hover:text-blue-800"
             >
-              <span className="text-2xl">{icon}</span>
-              <div>
-                <p className="text-sm font-medium text-gray-800">
-                  {resource.type}
-                </p>
-                <p className="text-xs text-gray-500">{label}</p>
-              </div>
+              {r.type}
             </a>
-          );
-        })}
-      </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
-};
-
-export default ResourceList;
+}

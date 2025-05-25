@@ -2,15 +2,19 @@
 
 import React from "react";
 import Navbar from "../components/Navbar";
-import InfoDisease from "@/components/InfoDisease";
-import ResourceList from "@/components/ResourceList";
-import ResourceCard from "@/components/ReasourceCard";
-import AboutUs from "@/components/AboutsUs";
+import { DiseaseCard } from "@/components/DiseaseCard";
+import diseaseData from "../app/data/diseases.json";
+import authorData from "../app/data/authors.json";
 import { Button } from "@/components/Button";
-
-import diseaseData from "./data/resources.json";
+import AboutUs from "@/components/AboutUs";
 
 export default function Home() {
+  const {
+    medicalInformaticsExperts,
+    diabetesResearchAuthors,
+    heartDiseaseResearchAuthors,
+  } = authorData;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800">
       <Navbar />
@@ -55,17 +59,18 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <section>
-        <InfoDisease />
-      </section>
-      <section id="all-resources" className="px-4 lg:px-8 py-12">
-        <h2 className="text-2xl font-semibold mb-6">All Disease Resources</h2>
+
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6">
         {diseaseData.map((d) => (
-          <ResourceCard key={d.id} disease={d} />
+          <DiseaseCard key={d.id} disease={d} />
         ))}
       </section>
-      <section id="aboutUs" className="px-4 lg:px-8 py-20">
-        <AboutUs />
+
+      {/* Scrolling Medical Informatics Experts Section */}
+      <section id="all-resources" className="px-4 lg:px-8 py-12">
+        <div className="min-w-[250px]">
+          <AboutUs />
+        </div>
       </section>
     </div>
   );

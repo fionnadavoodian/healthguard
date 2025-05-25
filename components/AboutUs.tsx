@@ -1,14 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import TeamCard from "./TeamCard";
-import teamData from "../app/data/authors.json";
-
+import { AuthorCard } from "./AuthorCard";
+import authorData from "../app/data/authors.json";
 export default function AboutUs() {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollWrapperRef = useRef<HTMLDivElement>(null);
-  const [duplicatedMembers] = useState([
-    ...Object.values(teamData).flat(),
-    ...Object.values(teamData).flat(),
+  const [duplicatedAuthors] = useState([
+    ...Object.values(authorData).flat(),
+    ...Object.values(authorData).flat(),
   ]);
   const animationRef = useRef<number | undefined>(undefined);
   const [startAnimation, setStartAnimation] = useState(false);
@@ -40,9 +39,9 @@ export default function AboutUs() {
   }, []);
 
   return (
-    <section id="team" className="py-20 bg-gray-100 dark:bg-gray-900">
+    <section id="authors" className="py-20 bg-gray-100 dark:bg-gray-900">
       <h2 className="text-4xl font-bold text-center text-gray-800 dark:text-white mb-12 px-4">
-        Meet the Team
+        Meet the team
       </h2>
 
       <div className="relative overflow-hidden w-full px-4" ref={containerRef}>
@@ -56,9 +55,9 @@ export default function AboutUs() {
             animation: startAnimation ? "scroll 40s linear infinite" : "none",
           }}
         >
-          {duplicatedMembers.map((member, index) => (
-            <div key={`${member.name}-${index}`} className="flex-shrink-0 mx-4">
-              <TeamCard {...member} />
+          {duplicatedAuthors.map((author, index) => (
+            <div key={`${author.name}-${index}`} className="flex-shrink-0 mx-4">
+              <AuthorCard {...author} />
             </div>
           ))}
         </div>
