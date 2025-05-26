@@ -1,4 +1,4 @@
-"use client";
+"use client"; // This directive is correctly placed
 
 import {
   createContext,
@@ -9,8 +9,8 @@ import {
 } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import type { Session } from "@supabase/supabase-js";
-import { Database } from "@/types/supabase"; // Assuming you have your types generated
-import { useRouter } from "next/navigation";
+import { Database } from "../types/supabase";
+import { useRouter } from "next/navigation"; // Import useRouter
 
 type SupabaseContextType = {
   supabase: ReturnType<typeof createBrowserClient<Database>>;
@@ -23,7 +23,7 @@ const SupabaseContext = createContext<SupabaseContextType | undefined>(
 );
 
 export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
+  const router = useRouter(); // useRouter is now defined
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!

@@ -1,4 +1,11 @@
-export type Json =
+[?25l
+    Select a project:                                                                            
+                                                                                                 
+  >  1. femoxxnrdtwzozsnkian [name: Healthguard, org: vmeaqucshdvmgssqyynv, region: eu-central-1]
+                                                                                                 
+                                                                                                 
+    ↑/k up • ↓/j down • / filter • q quit • ? more                                               
+                                                                                                 [0D[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[0D[2K [0D[2K[?25h[?1002l[?1003l[?1006lexport type Json =
   | string
   | number
   | boolean
@@ -11,46 +18,22 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
-          avatar_url: string | null
-          common_diseases: string[] | null
           created_at: string | null
-          date_of_birth: string | null
           email: string
-          gender: string | null
-          has_initial_medical_info: boolean | null
-          height: number | null
           id: string
           name: string | null
-          updated_at: string | null
-          weight: number | null
         }
         Insert: {
-          avatar_url?: string | null
-          common_diseases?: string[] | null
           created_at?: string | null
-          date_of_birth?: string | null
           email: string
-          gender?: string | null
-          has_initial_medical_info?: boolean | null
-          height?: number | null
           id?: string
           name?: string | null
-          updated_at?: string | null
-          weight?: number | null
         }
         Update: {
-          avatar_url?: string | null
-          common_diseases?: string[] | null
           created_at?: string | null
-          date_of_birth?: string | null
           email?: string
-          gender?: string | null
-          has_initial_medical_info?: boolean | null
-          height?: number | null
           id?: string
           name?: string | null
-          updated_at?: string | null
-          weight?: number | null
         }
         Relationships: []
       }
