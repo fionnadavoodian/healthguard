@@ -1,25 +1,26 @@
-@import "tailwindcss";
-@tailwind utilities;
+@import "tailwindcss"; /* Keep this at the top */
 
 @layer base {
   :root {
-    --background: 243 244 246;  /* #f3f4f6 */
-    --foreground: 17 24 39;     /* #111827 */
+    --background: rgb(243 244 246);  
+    --foreground: rgb(17 24 39);     
+    --navbar-height: 80px;
   }
 
   .dark {
-    --background: 17 24 39;     /* #111827 */
-    --foreground: 243 244 246;  /* #f3f4f6 */
+    --background: rgb(17 24 39);     
+    --foreground: rgb(243 244 246);  
   }
 }
 
-/* Custom base styles */
-@layer base {
-  html {
-    @apply scroll-smooth;
-  }
-
+html {
+  color: var(--foreground);
+  background-color: var(--background);
+  transition: color 0.2s, background-color 0.2s;
+  /* @apply scroll-smooth; */ /* If you want scroll-smooth, keep this, it usually applies fine */
 }
+
+/* Rest of your existing CSS below */
 
 /* Card component styles */
 .card-icon img {

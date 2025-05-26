@@ -1,7 +1,7 @@
+// app/page.tsx
 "use client";
 
 import React from "react";
-import Navbar from "../components/Navbar";
 import { DiseaseCard } from "@/components/DiseaseCard";
 import diseaseData from "../app/data/diseases.json";
 import authorData from "../app/data/authors.json";
@@ -17,8 +17,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800">
-      <Navbar />
-
       {/* Hero Section */}
       <section id="home" className="px-4 lg:px-8 py-20">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-16">
@@ -59,13 +57,11 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6">
         {diseaseData.map((d) => (
           <DiseaseCard key={d.id} disease={d} />
         ))}
       </section>
-
       {/* Scrolling Medical Informatics Experts Section */}
       <section id="all-resources" className="px-4 lg:px-8 py-12">
         <div className="min-w-[250px]">

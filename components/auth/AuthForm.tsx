@@ -1,81 +1,141 @@
-// app/(auth)/login/page.tsx
+// components/auth/AuthForm.tsx
 "use client";
-import { motion } from "framer-motion";
-import AuthForm from "@/components/auth/AuthForm";
-import Link from "next/link";
-// Assuming you switch to Heroicons if you removed react-icons and lucide-react
-import { ArrowLeftIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 
-export default function LoginPage() {
+import { useForm, FieldErrors } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Input from "@/components/Input";
+import { Button } from "@/components/Button";
+import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
+import { useSupabaseAuth } from "@/providers/SupabaseAuthProvider";
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+const registerSchema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z
+      .string()
+      .min(6, "Confirm password must be at least 6 characters"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+type LoginFormData = z.infer<typeof loginSchema>;
+type RegisterFormData = z.infer<typeof registerSchema>;
+
+interface AuthFormProps {
+  type: "login" | "register";
+}
+
+export default function AuthForm({ type }: AuthFormProps) {
+  const router = useRouter();
+  const { supabase } = useSupabaseAuth();
+  const [loading, setLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<LoginFormData | RegisterFormData>({
+    resolver: zodResolver(type === "login" ? loginSchema : registerSchema),
+  });
+
+  const password = watch("password");
+
+  const registerErrors = errors as FieldErrors<RegisterFormData>;
+
+  const onSubmit = async (data: LoginFormData | RegisterFormData) => {
+    setLoading(true);
+    try {
+      if (type === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+        if (error) throw error;
+        toast.success("Logged in successfully!");
+        router.push("/account");
+      } else {
+        const registerData = data as RegisterFormData;
+        const { error } = await supabase.auth.signUp({
+          email: registerData.email,
+          password: registerData.password,
+          options: {
+            data: {
+              name: registerData.name,
+            },
+          },
+        });
+        if (error) throw error;
+        toast.success(
+          "Registration successful! Please check your email for confirmation."
+        );
+        router.push("/login");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "An unexpected error occurred.");
+      console.error("Auth error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 p-4 relative">
-      {/* Return Button */}
-      <Link
-        href="/"
-        className="absolute top-4 left-4 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors flex items-center text-sm font-medium"
-      >
-        <ArrowLeftIcon className="w-4 h-4 mr-1" />
-        Return
-      </Link>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        {/* Login Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-          {/* Gradient Header */}
-          <div className="h-2 bg-gradient-to-r from-green-400 to-blue-500"></div>
-
-          <div className="p-8">
-            {/* Header with Icon */}
-            <div className="flex flex-col items-center mb-8">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center shadow-md mb-4">
-                <UserCircleIcon className="text-white text-2xl" />{" "}
-                {/* Example Heroicon */}
-              </div>
-              <h1 className="text-3xl font-bold text-center text-gray-800 dark:text-white">
-                Sign In
-              </h1>
-              <p className="mt-2 text-center text-gray-600 dark:text-gray-300">
-                Welcome back!
-              </p>
-            </div>
-
-            {/* Auth Form */}
-            <AuthForm type="login" />
-
-            {/* Footer Links */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Don't have an account?{" "}
-                <Link
-                  href="/auth/register" // Make sure this links to your register page
-                  className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                >
-                  Create one
-                </Link>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Terms and Conditions */}
-        <div className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
-          <p>
-            By signing in, you agree to our{" "}
-            <Link href="/terms" className="hover:underline">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="hover:underline">
-              Privacy Policy
-            </Link>
-          </p>
-        </div>
-      </motion.div>
-    </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {type === "register" && (
+        <Input
+          label="Name"
+          id="name"
+          type="text"
+          {...register("name")}
+          error={registerErrors.name?.message}
+          disabled={loading}
+        />
+      )}
+      <Input
+        label="Email Address"
+        id="email"
+        type="email"
+        {...register("email")}
+        error={errors.email?.message}
+        disabled={loading}
+      />
+      <Input
+        label="Password"
+        id="password"
+        type="password"
+        {...register("password")}
+        error={errors.password?.message}
+        disabled={loading}
+      />
+      {type === "register" && password && (
+        <PasswordStrengthMeter password={password} />
+      )}
+      {type === "register" && (
+        <Input
+          label="Confirm Password"
+          id="confirmPassword"
+          type="password"
+          {...register("confirmPassword")}
+          error={registerErrors.confirmPassword?.message}
+          disabled={loading}
+        />
+      )}
+      <Button type="submit" className="w-full" isLoading={loading}>
+        {type === "login" ? "Sign In" : "Register"}
+      </Button>
+    </form>
   );
 }

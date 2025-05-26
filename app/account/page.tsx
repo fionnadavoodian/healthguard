@@ -1,146 +1,84 @@
-'use client';
-import { useState } from 'react';
+"use client";
+import { useEffect, useState, useCallback } from "react";
+import { useSupabaseAuth } from "@/providers/SupabaseAuthProvider";
+import InitialMedicalInfoForm from "@/components/InitialMedicalInfoForm";
+import DashboardPanel from "@/components/DashboardPanel";
+import { useRouter } from "next/navigation";
 
-export default function UserInfoForm({ user, onSave }: { user: any; onSave: (updated: any) => void }) {
-  const [formData, setFormData] = useState(user || {});
-  const [loading, setLoading] = useState(false);
+export default function AccountPage() {
+  const { user, supabase, session } = useSupabaseAuth();
+  const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // State to track if the initial user/session check is complete
+  const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
+  // State to determine if the user has completed basic medical info
+  const [hasBasicMedicalInfo, setHasBasicMedicalInfo] = useState<
+    boolean | undefined
+  >(undefined);
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/user', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      if (res.ok) {
-        const updatedUser = await res.json();
-        onSave(updatedUser);
+  // Callback for when initial medical info is saved
+  const handleMedicalInfoSaved = useCallback(() => {
+    setHasBasicMedicalInfo(true);
+    // SupabaseAuthProvider's onAuthStateChange already calls router.refresh()
+    // after user updates, so we can likely remove this direct call here
+    // router.refresh();
+  }, []); // No dependency on router here as we explicitly rely on auth listener refresh
+
+  useEffect(() => {
+    // Only proceed if user and session are definitively loaded (not undefined)
+    if (user !== undefined && session !== undefined) {
+      // If no user after the auth check, redirect to login page
+      if (!user) {
+        // Only redirect if not already on the login page to prevent loop
+        if (router.pathname !== "/login") {
+          // Check current path if available (router.pathname is client-side)
+          router.replace("/login"); // Use replace to avoid adding to history
+        }
+        return; // Exit early
       }
-    } catch (err) {
-      console.error('Error updating user', err);
-    } finally {
-      setLoading(false);
+
+      // If user exists and auth check is not yet complete for this render cycle
+      if (user && !isAuthCheckComplete) {
+        const userMetadata = user.user_metadata;
+        const hasRequiredBasicInfo =
+          !!userMetadata?.weight &&
+          !!userMetadata?.height &&
+          !!userMetadata?.date_of_birth &&
+          !!userMetadata?.gender;
+        setHasBasicMedicalInfo(
+          !!userMetadata?.has_initial_medical_info || hasRequiredBasicInfo
+        );
+        setIsAuthCheckComplete(true); // Mark check as complete
+      }
     }
-  };
+  }, [user, session, router, isAuthCheckComplete]); // Dependencies for this effect
 
-  return (
-    <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-3xl mx-auto mb-6">
-      <h2 className="text-2xl font-semibold mb-6 text-gray-800">Edit Profile</h2>
-
-      {/* Personal Info Section */}
-      <div className="mb-6">
-        <h3 className="text-xl font-medium text-gray-700 mb-4">Personal Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="name" className="block text-sm text-gray-600">Name</label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name || ''}
-              onChange={handleChange}
-              placeholder="Enter your name"
-              className="border p-2 rounded w-full"
-            />
-          </div>
-          <div>
-            <label htmlFor="age" className="block text-sm text-gray-600">Age</label>
-            <input
-              id="age"
-              name="age"
-              type="number"
-              value={formData.age || ''}
-              onChange={handleChange}
-              placeholder="Enter your age"
-              className="border p-2 rounded w-full"
-            />
-          </div>
-          <div>
-            <label htmlFor="email" className="block text-sm text-gray-600">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email || ''}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              className="border p-2 rounded w-full"
-            />
-          </div>
-        </div>
+  // Display loading indicator while authentication status is being determined
+  if (!isAuthCheckComplete) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-var(--navbar-height))]">
+        <p className="text-lg text-gray-600 dark:text-gray-300">
+          Authenticating and loading health data...
+        </p>
       </div>
+    );
+  }
 
-      {/* Medical Info Section */}
-      <div className="mb-6">
-        <h3 className="text-xl font-medium text-gray-700 mb-4">Medical Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="flex-1 relative max-w-2xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl blur-3xl opacity-10" />
-            <div className="relative bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl">
-              <div className="grid grid-cols-2 gap-6">
-                {['Heart Rate', 'Blood Pressure', 'Cholesterol', 'BMI'].map((metric) => (
-                  <div key={metric} className="p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                    <h3 className="text-gray-500 dark:text-gray-300 text-sm font-medium">{metric}</h3>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">--</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div>
-            <label htmlFor="bloodType" className="block text-sm text-gray-600">Blood Type</label>
-            <input
-              id="bloodType"
-              name="bloodType"
-              type="text"
-              value={formData.bloodType || ''}
-              onChange={handleChange}
-              placeholder="Enter your blood type"
-              className="border p-2 rounded w-full"
-            />
-          </div>
-          <div>
-            <label htmlFor="medicalConditions" className="block text-sm text-gray-600">Medical Conditions</label>
-            <input
-              id="medicalConditions"
-              name="medicalConditions"
-              type="text"
-              value={formData.medicalConditions || ''}
-              onChange={handleChange}
-              placeholder="Enter known medical conditions"
-              className="border p-2 rounded w-full"
-            />
-          </div>
-          <div>
-            <label htmlFor="medications" className="block text-sm text-gray-600">Medications</label>
-            <input
-              id="medications"
-              name="medications"
-              type="text"
-              value={formData.medications || ''}
-              onChange={handleChange}
-              placeholder="Enter any medications"
-              className="border p-2 rounded w-full"
-            />
-          </div>
-        </div>
-      </div>
+  // If auth check is complete but no user (meaning redirect initiated above)
+  if (!user) {
+    return null; // Don't render anything if user is not authenticated and redirect has been triggered
+  }
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          {loading ? 'Saving...' : 'Save'}
-        </button>
-      </div>
-    </div>
-  );
+  // Render either initial form or dashboard based on medical info completion
+  if (!hasBasicMedicalInfo) {
+    return (
+      <InitialMedicalInfoForm
+        user={user}
+        supabase={supabase}
+        onInfoSaved={handleMedicalInfoSaved}
+      />
+    );
+  } else {
+    return <DashboardPanel user={user} />;
+  }
 }

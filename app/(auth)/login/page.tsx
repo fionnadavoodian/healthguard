@@ -1,17 +1,18 @@
-'use client';
-import { motion } from 'framer-motion';
-import AuthForm from '@/components/auth/AuthForm';
-import Link from 'next/link';
-import { ArrowLeft, ArrowLeftIcon } from 'lucide-react'; // Import icon
-import { useState } from 'react';
+"use client";
+import { motion } from "framer-motion";
+import AuthForm from "@/components/auth/AuthForm";
+import Link from "next/link";
+import { ArrowLeftIcon, UserCircleIcon } from "@heroicons/react/24/outline";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSupabaseAuth } from "@/providers/SupabaseAuthProvider";
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
+    transition: { staggerChildren: 0.1 },
+  },
 };
 
 const itemVariants = {
@@ -19,53 +20,62 @@ const itemVariants = {
   visible: {
     y: 0,
     opacity: 1,
-    transition: { duration: 0.5 }
-  }
+    transition: { duration: 0.5 },
+  },
 };
 
 export default function LoginPage() {
+  const { user, session } = useSupabaseAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user !== undefined && session !== undefined) {
+      if (user) {
+        router.replace("/account");
+      }
+    }
+  }, [user, session, router]);
+
+  if (user !== undefined && session !== undefined && user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg text-gray-600 dark:text-gray-300">
+          Redirecting...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
-        <Link
+      <Link
         href="/"
         className="absolute top-4 left-4 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors flex items-center text-sm font-medium"
       >
-        <ArrowLeft className="w-4 h-4 mr-1" />
+        <ArrowLeftIcon className="w-4 h-4 mr-1" />
         Return
       </Link>
-      {/* Main Card */}
       <motion.div
         initial="hidden"
         animate="visible"
         variants={containerVariants}
         className="w-full max-w-md relative"
       >
-      
-
         <motion.div
           variants={itemVariants}
           className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700"
         >
-          <div className="h-2 bg-gradient-to-r from-pink-500 to-indigo-500" />
-
+          <div className="h-2 bg-gradient-to-r from-pink-500 to-indigo-500 dark:from-purple-700 dark:to-blue-800" />{" "}
+          {/* Made dark gradient more distinct */}
           <div className="p-8 space-y-6">
-            {/* Logo */}
             <motion.div variants={itemVariants} className="flex justify-center">
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-500 flex items-center justify-center shadow-lg">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="w-8 h-8 text-white"
-                >
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                </svg>
+              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-500 dark:from-indigo-700 dark:to-blue-700 flex items-center justify-center shadow-md">
+                {" "}
+                {/* Made dark gradient more distinct */}
+                <UserCircleIcon className="w-8 h-8 text-white" />
               </div>
             </motion.div>
 
-            {/* Title */}
             <motion.div variants={itemVariants}>
               <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
                 Welcome Back
@@ -75,15 +85,13 @@ export default function LoginPage() {
               </p>
             </motion.div>
 
-            {/* Auth Form */}
             <motion.div variants={itemVariants}>
               <AuthForm type="login" />
             </motion.div>
 
-            {/* Footer */}
             <motion.div variants={itemVariants} className="pt-4 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Don't have an account?{' '}
+                Don't have an account?{" "}
                 <Link
                   href="/register"
                   className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"

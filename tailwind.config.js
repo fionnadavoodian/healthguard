@@ -8,8 +8,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Custom colors that adapt to dark mode
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+       
       },
       backdropBlur: {
         xs: '2px',
