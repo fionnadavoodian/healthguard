@@ -342,7 +342,7 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
                   </p>
                 )}
                 <Link
-                  href={`/assessments/${assessment.id}`}
+                  href={`/assessments/${assessment.id === "diabetes" ? "diabetes" : assessment.id}`} // This is the modified line
                   className="mt-1.5 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 text-xs font-medium self-end"
                 >
                   {user.user_metadata?.[assessment.completedFlag]
