@@ -2,18 +2,7 @@
 "use client";
 
 import { User } from "@supabase/supabase-js";
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -36,15 +25,35 @@ interface DashboardPanelProps {
 
 // Helper to calculate BMI and categorize it
 const calculateBMI = (weightKg: number, heightCm: number) => {
-  if (!weightKg || !heightCm) return { value: null, category: "N/A" };
+  // Ensure weightKg and heightCm are positive numbers before calculation
+  if (!weightKg || !heightCm || weightKg <= 0 || heightCm <= 0)
+    return { value: null, category: "N/A", insight: "" };
+
   const heightM = heightCm / 100;
   const bmi = weightKg / (heightM * heightM);
+
+  // Explicitly check for NaN after calculation and return null if it's NaN
+  if (isNaN(bmi)) {
+    return { value: null, category: "N/A", insight: "" };
+  }
+
   let category = "";
-  if (bmi < 18.5) category = "Underweight";
-  else if (bmi >= 18.5 && bmi < 24.9) category = "Normal weight";
-  else if (bmi >= 25 && bmi < 29.9) category = "Overweight";
-  else if (bmi >= 30) category = "Obese";
-  return { value: parseFloat(bmi.toFixed(2)), category };
+  let insight = "";
+  if (bmi < 18.5) {
+    category = "Underweight";
+    insight = "Consider consulting a doctor for healthy weight gain.";
+  } else if (bmi >= 18.5 && bmi < 24.9) {
+    category = "Normal weight";
+    insight = "Maintain your healthy lifestyle!";
+  } else if (bmi >= 25 && bmi < 29.9) {
+    category = "Overweight";
+    insight = "Focus on healthy eating and exercise.";
+  } else if (bmi >= 30) {
+    category = "Obese";
+    insight =
+      "It's recommended to consult a healthcare professional for guidance.";
+  }
+  return { value: parseFloat(bmi.toFixed(2)), category, insight };
 };
 
 // Helper to calculate age from Date of Birth
@@ -82,22 +91,22 @@ const ASSESSMENTS_INFO = [
 ];
 
 export default function DashboardPanel({ user }: DashboardPanelProps) {
-  // Defensive check: If user is null, don't attempt to render
   if (!user) {
-    return null; // Or you could return a loading spinner or an error message
+    return null;
   }
 
   const userDateOfBirth = user.user_metadata?.date_of_birth;
   const userGender = user.user_metadata?.gender;
-  const userWeight = user.user_metadata?.weight;
-  const userHeight = user.user_metadata?.height;
+  const userWeight = parseFloat(user.user_metadata?.weight) || 0;
+  const userHeight = parseFloat(user.user_metadata?.height) || 0;
   const userCommonDiseases = user.user_metadata?.common_diseases || [];
 
   const userAge = calculateAge(userDateOfBirth);
-  const { value: bmiValue, category: bmiCategory } = calculateBMI(
-    userWeight,
-    userHeight
-  );
+  const {
+    value: bmiValue,
+    category: bmiCategory,
+    insight: bmiInsight,
+  } = calculateBMI(userWeight, userHeight);
 
   const completedAssessmentsCount = ASSESSMENTS_INFO.filter(
     (assessment) => user.user_metadata?.[assessment.completedFlag] === true
@@ -115,24 +124,24 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
 
   const PIE_COLORS = ["#4CAF50", "#E0E0E0"];
 
-  const bmiChartCategories = [
-    { name: "Underweight", min: 0, max: 18.5, color: "#FFC107" },
-    { name: "Normal weight", min: 18.5, max: 24.9, color: "#4CAF50" },
-    { name: "Overweight", min: 25, max: 29.9, color: "#FF9800" },
-    { name: "Obese", min: 30, max: Infinity, color: "#F44336" },
-  ];
+  // Determine the color class for the BMI status bar
+  let bmiColorClass = "bg-gray-400"; // Default
+  if (bmiCategory === "Underweight") {
+    bmiColorClass = "bg-yellow-500";
+  } else if (bmiCategory === "Normal weight") {
+    bmiColorClass = "bg-green-500";
+  } else if (bmiCategory === "Overweight") {
+    bmiColorClass = "bg-orange-500";
+  } else if (bmiCategory === "Obese") {
+    bmiColorClass = "bg-red-500";
+  }
 
-  const currentBmiData = bmiChartCategories.map((cat) => ({
-    name: cat.name,
-    range: `${cat.min}${cat.max === Infinity ? "+" : `-${cat.max}`}`,
-    isCurrent:
-      bmiValue !== null &&
-      bmiValue >= cat.min &&
-      (cat.max === Infinity || bmiValue < cat.max)
-        ? bmiValue
-        : 0,
-    color: cat.color,
-  }));
+  // BMI category thresholds as percentages of a max BMI (e.g., 40 or 50 for visualization)
+  // Let's assume a max visual BMI of 40 for percentage calculation for these lines
+  const maxBmiForVisualization = 40;
+  const underweightThreshold = (18.5 / maxBmiForVisualization) * 100;
+  const normalWeightThreshold = (24.9 / maxBmiForVisualization) * 100; // End of normal, start of overweight
+  const overweightThreshold = (29.9 / maxBmiForVisualization) * 100; // End of overweight, start of obese
 
   return (
     <motion.div
@@ -148,7 +157,8 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
           // Removed whileHover={{ scale: 1.01 }} to stop bouncing
           className="lg:col-span-1 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center justify-between min-h-0"
         >
-          <div>
+          {/* Adjusted for better vertical alignment */}
+          <div className="flex flex-col items-center justify-center flex-grow">
             <div className="w-16 h-16 rounded-full bg-indigo-500 dark:bg-indigo-700 flex items-center justify-center text-white text-2xl font-semibold mb-3 shadow-lg overflow-hidden flex-shrink-0">
               {user.user_metadata?.avatar_url ? (
                 <img
@@ -165,49 +175,21 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
             </h2>
             <div className="space-y-0.5 text-gray-700 dark:text-gray-300 text-xs">
               <p className="font-medium">{user.email}</p>
-              {userDateOfBirth && (
-                <p className="flex items-center justify-center">
-                  <CalendarIcon className="w-3 h-3 mr-0.5" /> DOB:{" "}
-                  {userDateOfBirth}
-                </p>
-              )}
-              {userAge && <p>Age: {userAge} years</p>}
-              {userGender && (
-                <p className="flex items-center justify-center">
-                  <IdentificationIcon className="w-3 h-3 mr-0.5" /> Gender:{" "}
-                  {userGender}
-                </p>
-              )}
-              {userWeight && userHeight && (
-                <p>
-                  Weight: {userWeight} kg, Height: {userHeight} cm
-                </p>
-              )}
-              {userCommonDiseases.length > 0 &&
-              userCommonDiseases[0] !== "None" ? (
-                <p>Common Diseases: {userCommonDiseases.join(", ")}</p>
-              ) : (
-                <p>No common diseases reported.</p>
-              )}
             </div>
           </div>
           <Link
             href="/account/edit-profile"
             className="mt-2 text-blue-600 dark:text-blue-400 hover:underline font-medium flex items-center text-xs"
           >
-            <AcademicCapIcon className="w-3.5 h-3.5 mr-0.5" /> Edit Profile
-            Details
+            <AcademicCapIcon className="w-3.5 h-3.5 mr-0.5" /> View and Edit
           </Link>
         </motion.div>
 
-        <motion.div
-          // Removed whileHover={{ scale: 1.01 }} to stop bouncing
-          className="lg:col-span-1 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center min-h-0"
-        >
+        <motion.div className="lg:col-span-1 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center min-h-0">
           <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">
             Your BMI
           </h2>
-          {bmiValue !== null ? (
+          {bmiValue !== null /* Conditionally render the BMI content */ ? (
             <>
               <p className="text-4xl font-extrabold text-gray-900 dark:text-white mb-1">
                 {bmiValue}
@@ -227,32 +209,50 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
               >
                 {bmiCategory}
               </p>
-
-              <ResponsiveContainer width="100%" height={80}>
-                <BarChart
-                  data={currentBmiData}
-                  layout="vertical"
-                  margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-                >
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" hide />
-                  <Tooltip
-                    cursor={{ fill: "transparent" }}
-                    formatter={(value: number, name: string, props: any) => [
-                      `${value} kg/m²`,
-                      props.payload.name,
-                    ]}
-                  />
-                  <Bar dataKey="isCurrent" fill="#8884d8" maxBarSize={10}>
-                    {currentBmiData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Based on your weight and height.
-              </p>
+              {userWeight > 0 &&
+                userHeight > 0 && ( // Only display if weight and height are valid numbers
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    Weight: {userWeight} kg, Height: {userHeight} cm
+                  </p>
+                )}
+              {bmiInsight && (
+                <p className="text-xs text-gray-700 dark:text-gray-300 mt-2 italic text-center max-w-[200px]">
+                  "{bmiInsight}"
+                </p>
+              )}
+              {/* Custom BMI Status Bar with Borderlines */}
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 my-3 relative overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${bmiColorClass}`}
+                  style={{
+                    width: `${Math.min(100, (bmiValue / maxBmiForVisualization) * 100)}%`,
+                  }}
+                ></div>
+                {/* Borderlines for BMI categories */}
+                {bmiValue !== null && (
+                  <>
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-gray-500 dark:bg-gray-400"
+                      style={{ left: `${underweightThreshold}%` }}
+                    ></div>
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-gray-500 dark:bg-gray-400"
+                      style={{ left: `${normalWeightThreshold}%` }}
+                    ></div>
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-gray-500 dark:bg-gray-400"
+                      style={{ left: `${overweightThreshold}%` }}
+                    ></div>
+                  </>
+                )}
+              </div>
+              {/* Subtitles for BMI categories - Simplified for no overlap */}
+              <div className="w-full flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-1 px-1">
+                <span className="flex-1 text-left">Underweight</span>
+                <span className="flex-1 text-center">Normal</span>
+                <span className="flex-1 text-center">Overweight</span>
+                <span className="flex-1 text-right">Obese</span>
+              </div>
             </>
           ) : (
             <p className="text-xs text-gray-600 dark:text-gray-300 text-center">
