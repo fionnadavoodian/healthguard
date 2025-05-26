@@ -1,7 +1,7 @@
 // components/InitialMedicalInfoForm.tsx
 "use client";
 
-import { useState, useEffect } from "react"; // Ensure useEffect is imported
+import { useState, useEffect } from "react";
 import { SupabaseClient, User } from "@supabase/supabase-js";
 import toast from "react-hot-toast";
 import LoadingButton from "./LoadingButton";
@@ -14,16 +14,15 @@ interface InitialMedicalInfoFormProps {
   user: User;
   supabase: SupabaseClient;
   onInfoSaved: () => void;
-  isEditMode?: boolean; // Add this prop
+  isEditMode?: boolean;
 }
 
-// Define an interface for your form data to explicitly type it
 interface FormData {
   date_of_birth: string;
   gender: string;
   weight: string;
   height: string;
-  common_diseases: string[]; // Explicitly define as string array
+  common_diseases: string[];
   avatar_url: string;
 }
 
@@ -39,7 +38,6 @@ const COMMON_DISEASES = [
 
 const GENDER_OPTIONS = ["Male", "Female", "Other", "Prefer not to say"];
 
-// Helper to calculate BMI
 const calculateBMI = (weightKg: number | string, heightCm: number | string) => {
   const parsedWeight = Number(weightKg);
   const parsedHeight = Number(heightCm);
@@ -60,15 +58,14 @@ export default function InitialMedicalInfoForm({
   user,
   supabase,
   onInfoSaved,
-  isEditMode = false, // Set default value to false
+  isEditMode = false,
 }: InitialMedicalInfoFormProps) {
-  // Use the FormData interface to type the useState hook
   const [formData, setFormData] = useState<FormData>({
     date_of_birth: "",
     gender: "",
     weight: "",
     height: "",
-    common_diseases: [], // This is now correctly typed as string[]
+    common_diseases: [],
     avatar_url: "",
   });
   const [loading, setLoading] = useState(false);
@@ -81,9 +78,8 @@ export default function InitialMedicalInfoForm({
     avatar?: string;
   }>({});
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null); // Initial preview is null, fetched data will set it
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-  // Fetch initial profile data when the component mounts or user/supabase changes
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
@@ -91,34 +87,32 @@ export default function InitialMedicalInfoForm({
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single(); // Use single() to get a single record for the current user
+        .single();
 
       if (error && error.code !== "PGRST116") {
-        // PGRST116 means no rows found (e.g., brand new user)
         console.error(
           "Error fetching profile:",
           JSON.stringify(error, null, 2)
-        ); // Improved error logging
+        );
         toast.error("Failed to load profile data.");
       } else if (data) {
-        // If data is found, populate the form state
         setFormData({
           date_of_birth: data.date_of_birth || "",
           gender: data.gender || "",
-          weight: data.weight?.toString() || "", // Convert number to string for input
-          height: data.height?.toString() || "", // Convert number to string for input
+          weight: data.weight?.toString() || "",
+          height: data.height?.toString() || "",
           common_diseases: Array.isArray(data.common_diseases)
             ? data.common_diseases
             : [],
           avatar_url: data.avatar_url || "",
         });
-        setAvatarPreview(data.avatar_url || null); // Set avatar preview from fetched URL
+        setAvatarPreview(data.avatar_url || null);
       }
       setLoading(false);
     };
 
     fetchProfile();
-  }, [user.id, supabase]); // Depend on user.id and supabase to refetch if they change
+  }, [user.id, supabase]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -148,26 +142,6 @@ export default function InitialMedicalInfoForm({
             (d: string) => d !== value
           );
         }
-      }
-
-      // Keep BMI calculation if weight or height change
-      if (
-        (name === "weight" || name === "height") &&
-        updatedData.weight &&
-        updatedData.height
-      ) {
-        // Update bmi property in the form data if needed for display or validation
-        // Note: The actual BMI is saved in user_metadata during handleSubmit
-        // This 'bmi' property in formData is just for internal component use if needed
-        (updatedData as any).bmi = calculateBMI(
-          updatedData.weight,
-          updatedData.height
-        );
-      } else if (
-        (name === "weight" && !updatedData.weight) ||
-        (name === "height" && !updatedData.height)
-      ) {
-        (updatedData as any).bmi = null;
       }
       return updatedData;
     });
@@ -220,9 +194,12 @@ export default function InitialMedicalInfoForm({
         ...prev,
         avatar: error.message || "Failed to upload avatar",
       }));
+      toast.error(
+        `Avatar upload failed: ${error.message || "Please try again."}`
+      );
       return null;
     } finally {
-      setLoading(false);
+      // setLoading(false) is handled in handleSubmit's finally block
     }
   };
 
@@ -262,29 +239,39 @@ export default function InitialMedicalInfoForm({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("handleSubmit called!");
     e.preventDefault();
-    if (!validateForm()) {
+
+    const formIsValid = validateForm();
+    console.log("Form Validation Result:", formIsValid);
+
+    if (!formIsValid) {
       toast.error("Please correct the form errors.");
+      console.log("Validation failed, returning.");
       return;
     }
 
     setLoading(true);
+    console.log("Loading set to true.");
     let newAvatarUrl: string | null = formData.avatar_url;
 
     if (avatarFile) {
+      console.log("Avatar file detected, attempting upload.");
       newAvatarUrl = await uploadAvatar();
+      console.log("Avatar upload result:", newAvatarUrl ? "Success" : "Failed");
       if (!newAvatarUrl) {
         setLoading(false);
+        console.log("Avatar upload failed, returning.");
         return;
       }
     }
 
     const calculatedBmi = calculateBMI(formData.weight, formData.height);
+    console.log("BMI calculated:", calculatedBmi);
 
     try {
-      // Data to be saved to the 'profiles' table
       const profileDataToSave = {
-        id: user.id, // Ensure ID is explicitly included for upsert, although user.id is already there from context
+        id: user.id,
         email: user.email || null,
         date_of_birth: formData.date_of_birth,
         gender: formData.gender,
@@ -292,41 +279,49 @@ export default function InitialMedicalInfoForm({
         height: Number(formData.height),
         common_diseases: formData.common_diseases,
         avatar_url: newAvatarUrl,
-        has_initial_medical_info: true, // Mark as true upon submission
+        has_initial_medical_info: true,
       };
 
-      // Perform an upsert operation on the 'profiles' table
+      console.log("Attempting profiles upsert with data:", profileDataToSave);
       const { error } = await supabase
         .from("profiles")
-        // Pass the entire profileDataToSave directly, as it now includes `id` and `email`
         .upsert(profileDataToSave, { onConflict: "id" });
 
       if (error) {
+        console.error("Supabase profiles upsert error:", error);
         throw error;
       }
+      console.log("Profiles upsert successful.");
 
-      // Optionally, update user_metadata for the has_initial_medical_info flag.
+      console.log("Attempting user metadata update...");
       const { error: userUpdateError } = await supabase.auth.updateUser({
         data: {
-          ...formData,
+          date_of_birth: formData.date_of_birth,
+          gender: formData.gender,
+          weight: Number(formData.weight),
+          height: Number(formData.height),
+          common_diseases: formData.common_diseases,
           avatar_url: newAvatarUrl,
           has_initial_medical_info: true,
-          bmi: calculatedBmi,
+          bmi: calculatedBmi, // Ensure your user_metadata schema in Supabase allows for 'bmi'
         },
       });
 
       if (userUpdateError) {
-        // Corrected error variable
-        throw userUpdateError; // Throw the correct error
+        console.error("Supabase user metadata update error:", userUpdateError);
+        throw userUpdateError;
       }
+      console.log("User metadata update successful.");
 
       toast.success("Basic medical information saved successfully!");
       onInfoSaved();
+      console.log("onInfoSaved called.");
     } catch (err: any) {
-      console.error("Error saving medical info:", err);
+      console.error("Caught error during save process:", err);
       toast.error(`Failed to save info: ${err.message || "Please try again."}`);
     } finally {
       setLoading(false);
+      console.log("Loading set to false (finally block).");
     }
   };
 
@@ -335,13 +330,11 @@ export default function InitialMedicalInfoForm({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      // Adjusted class for padding based on isEditMode
       className={`flex items-center justify-center min-h-[calc(100vh-var(--navbar-height))] px-4 md:px-6 ${isEditMode ? "py-0" : "py-4 md:py-6"}`}
     >
       <div
         className={`bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-4xl overflow-hidden transform transition-all duration-300 ${isEditMode ? "" : "hover:shadow-3xl"}`}
       >
-        {/* Header with gradient - conditionally rendered based on isEditMode */}
         {!isEditMode && (
           <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white text-center">
             <h2 className="text-xl sm:text-2xl font-bold mb-1">
@@ -352,28 +345,23 @@ export default function InitialMedicalInfoForm({
             </p>
           </div>
         )}
-
-        {/* Content for the form */}
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-          {/* Removed isEditMode heading here as it's handled by EditProfilePage */}
-          {/* Avatar Upload */}
+        <form
+          onSubmit={handleSubmit}
+          className="p-4 sm:p-6 space-y-4 sm:space-y-6"
+        >
           <div className="flex flex-col items-center gap-2 mb-2">
             <label htmlFor="avatar-upload" className="relative cursor-pointer">
-              {avatarPreview || formData.avatar_url ? ( // If either has a URL
+              {avatarPreview || formData.avatar_url ? (
                 <img
-                  src={avatarPreview || formData.avatar_url} // Use preview first, then saved URL
-                  alt="User Avatar" // More generic alt text
+                  src={avatarPreview || formData.avatar_url}
+                  alt="User Avatar"
                   className="w-16 h-16 rounded-full object-cover border-3 border-indigo-400 dark:border-indigo-600 shadow-md"
                   onError={(e) => {
-                    // Add onError handler to show placeholder if image fails to load
-                    e.currentTarget.style.display = "none"; // Hide broken image
-                    // Optionally, set a state to show the default icon
-                    // For simplicity, we rely on the next div to show if this fails
-                    setAvatarPreview(null); // Clear preview to force placeholder on next render
+                    e.currentTarget.style.display = "none";
+                    setAvatarPreview(null);
                   }}
                 />
               ) : (
-                // Fallback to generic icon if no URL is present or image fails to load
                 <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-300 border-3 border-indigo-400 dark:border-indigo-600 shadow-md">
                   <PhotoIcon className="w-8 h-8" />
                 </div>
@@ -400,7 +388,6 @@ export default function InitialMedicalInfoForm({
             )}
           </div>
 
-          {/* Personal Details */}
           <div className="space-y-3 sm:space-y-4">
             <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white flex items-center mb-1.5">
               <UserIcon className="w-4.5 h-4.5 mr-1.5 text-indigo-500 dark:text-indigo-400" />{" "}
@@ -476,7 +463,6 @@ export default function InitialMedicalInfoForm({
             </div>
           </div>
 
-          {/* Common Diseases */}
           <div className="space-y-3 sm:space-y-4">
             <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white flex items-center mb-1.5">
               <HeartIcon className="w-4.5 h-4.5 mr-1.5 text-red-500 dark:text-red-400" />
@@ -510,14 +496,12 @@ export default function InitialMedicalInfoForm({
             )}
           </div>
 
-          <div className="flex flex-col pt-3 gap-3">
-            {" "}
-            {/* Changed to flex-col and gap-3 */}
-            {isEditMode && ( // Conditionally render Cancel button
+          <div className="flex justify-end pt-3 gap-2">
+            {isEditMode && (
               <button
-                type="button" // Important: type="button" to prevent form submission
-                onClick={() => onInfoSaved()} // onInfoSaved() will also set isEditing to false in parent
-                className="w-full px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" // Added w-full
+                type="button"
+                onClick={() => onInfoSaved()}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 Cancel
               </button>
@@ -525,12 +509,12 @@ export default function InitialMedicalInfoForm({
             <LoadingButton
               type="submit"
               loading={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 px-6 py-2.5 rounded-lg text-base font-semibold shadow-xl transition-all duration-300 transform hover:scale-105" // Added w-full
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 px-6 py-2.5 rounded-lg text-base font-semibold shadow-xl transition-all duration-300 transform hover:scale-105"
             >
               Save My Profile
             </LoadingButton>
           </div>
-        </div>
+        </form>{" "}
       </div>
     </motion.div>
   );
