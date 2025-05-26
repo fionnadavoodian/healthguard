@@ -1,3 +1,4 @@
+// components/Navbar.tsx
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,7 +12,7 @@ import {
   Bars3Icon,
   XMarkIcon,
   ArrowRightEndOnRectangleIcon,
-} from "@heroicons/react/24/outline"; // Added ArrowRightEndOnRectangleIcon
+} from "@heroicons/react/24/outline";
 
 export default function Navbar() {
   const { session, supabase, user } = useSupabaseAuth();
@@ -42,7 +43,6 @@ export default function Navbar() {
   return (
     <nav className="bg-white/80 dark:bg-white/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 h-[var(--navbar-height)] flex items-center">
       <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        {" "}
         {/* Adjusted px and py for mobile */}
         {/* Left Side: Logo and Brand Name */}
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -94,7 +94,7 @@ export default function Navbar() {
             <LoadingButton
               loading={loading}
               onClick={handleSignOut}
-              className="px-4 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors flex items-center text-sm font-medium whitespace-nowrap hidden sm:flex"
+              className="px-4 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors items-center text-sm font-medium whitespace-nowrap hidden sm:flex" // Removed 'flex' here
             >
               <ArrowRightEndOnRectangleIcon className="w-5 h-5 mr-1" />
               Sign Out

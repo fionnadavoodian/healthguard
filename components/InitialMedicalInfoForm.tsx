@@ -150,17 +150,24 @@ export default function InitialMedicalInfoForm({
         }
       }
 
+      // Keep BMI calculation if weight or height change
       if (
         (name === "weight" || name === "height") &&
         updatedData.weight &&
         updatedData.height
       ) {
-        updatedData.bmi = calculateBMI(updatedData.weight, updatedData.height);
+        // Update bmi property in the form data if needed for display or validation
+        // Note: The actual BMI is saved in user_metadata during handleSubmit
+        // This 'bmi' property in formData is just for internal component use if needed
+        (updatedData as any).bmi = calculateBMI(
+          updatedData.weight,
+          updatedData.height
+        );
       } else if (
         (name === "weight" && !updatedData.weight) ||
         (name === "height" && !updatedData.height)
       ) {
-        updatedData.bmi = null;
+        (updatedData as any).bmi = null;
       }
       return updatedData;
     });
@@ -308,8 +315,9 @@ export default function InitialMedicalInfoForm({
         },
       });
 
-      if (error) {
-        throw error;
+      if (userUpdateError) {
+        // Corrected error variable
+        throw userUpdateError; // Throw the correct error
       }
 
       toast.success("Basic medical information saved successfully!");
@@ -502,14 +510,14 @@ export default function InitialMedicalInfoForm({
             )}
           </div>
 
-          <div className="flex justify-end pt-3 gap-2">
+          <div className="flex flex-col pt-3 gap-3">
             {" "}
-            {/* Changed to justify-end and added gap-2 */}
+            {/* Changed to flex-col and gap-3 */}
             {isEditMode && ( // Conditionally render Cancel button
               <button
                 type="button" // Important: type="button" to prevent form submission
                 onClick={() => onInfoSaved()} // onInfoSaved() will also set isEditing to false in parent
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" // Added w-full
               >
                 Cancel
               </button>
@@ -517,7 +525,7 @@ export default function InitialMedicalInfoForm({
             <LoadingButton
               type="submit"
               loading={loading}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 px-6 py-2.5 rounded-lg text-base font-semibold shadow-xl transition-all duration-300 transform hover:scale-105"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 px-6 py-2.5 rounded-lg text-base font-semibold shadow-xl transition-all duration-300 transform hover:scale-105" // Added w-full
             >
               Save My Profile
             </LoadingButton>
