@@ -7,7 +7,11 @@ import DarkModeToggle from "./DarkModeToggle";
 import LoadingButton from "./LoadingButton";
 import { toast } from "react-hot-toast";
 import { useSupabaseAuth } from "@/providers/SupabaseAuthProvider";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  Bars3Icon,
+  XMarkIcon,
+  ArrowRightEndOnRectangleIcon,
+} from "@heroicons/react/24/outline"; // Added ArrowRightEndOnRectangleIcon
 
 export default function Navbar() {
   const { session, supabase, user } = useSupabaseAuth();
@@ -86,11 +90,13 @@ export default function Navbar() {
               </Link>
             </div>
           ) : (
+            // Sign Out Button for Desktop
             <LoadingButton
               loading={loading}
               onClick={handleSignOut}
-              className="text-sm text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-transparent gap-1 px-2 py-1 hidden sm:flex"
+              className="px-4 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors flex items-center text-sm font-medium whitespace-nowrap hidden sm:flex"
             >
+              <ArrowRightEndOnRectangleIcon className="w-5 h-5 mr-1" />
               Sign Out
             </LoadingButton>
           )}
@@ -134,6 +140,7 @@ export default function Navbar() {
               Resources
             </a>
             {session ? (
+              // Sign Out Button for Mobile Menu
               <LoadingButton
                 loading={loading}
                 onClick={() => {

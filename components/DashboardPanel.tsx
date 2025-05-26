@@ -267,7 +267,7 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
           className="lg:col-span-1 bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-4 rounded-2xl shadow-xl border border-blue-400 dark:border-indigo-700 flex flex-col items-center justify-center min-h-0"
         >
           <div
-            className="absolute inset-0 opacity-10"
+            className="absolute inset-0 opacity-10 -z-10" // Added -z-10 here
             style={{ backgroundImage: "url(/abstract-pattern.svg)" }}
           ></div>
           <h2 className="text-lg font-semibold mb-3 text-white z-10">
