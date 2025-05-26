@@ -1,7 +1,7 @@
 // components/InitialMedicalInfoForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"; // Ensure useEffect is imported
 import { SupabaseClient, User } from "@supabase/supabase-js";
 import toast from "react-hot-toast";
 import LoadingButton from "./LoadingButton";
@@ -23,9 +23,8 @@ interface FormData {
   gender: string;
   weight: string;
   height: string;
-  common_diseases: string[];
+  common_diseases: string[]; // Explicitly define as string array
   avatar_url: string;
-  bmi: number | null;
 }
 
 const COMMON_DISEASES = [
@@ -69,9 +68,8 @@ export default function InitialMedicalInfoForm({
     gender: "",
     weight: "",
     height: "",
-    common_diseases: [],
+    common_diseases: [], // This is now correctly typed as string[]
     avatar_url: "",
-    bmi: null,
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{
@@ -83,7 +81,7 @@ export default function InitialMedicalInfoForm({
     avatar?: string;
   }>({});
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null); // Initial preview is null, fetched data will set it
 
   // Fetch initial profile data when the component mounts or user/supabase changes
   useEffect(() => {
@@ -93,34 +91,34 @@ export default function InitialMedicalInfoForm({
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .single(); // Use single() to get a single record for the current user
 
       if (error && error.code !== "PGRST116") {
+        // PGRST116 means no rows found (e.g., brand new user)
         console.error(
           "Error fetching profile:",
           JSON.stringify(error, null, 2)
-        );
+        ); // Improved error logging
         toast.error("Failed to load profile data.");
       } else if (data) {
-        setFormData((prev) => ({
-          ...prev,
+        // If data is found, populate the form state
+        setFormData({
           date_of_birth: data.date_of_birth || "",
           gender: data.gender || "",
-          weight: data.weight?.toString() || "",
-          height: data.height?.toString() || "",
+          weight: data.weight?.toString() || "", // Convert number to string for input
+          height: data.height?.toString() || "", // Convert number to string for input
           common_diseases: Array.isArray(data.common_diseases)
             ? data.common_diseases
             : [],
           avatar_url: data.avatar_url || "",
-          bmi: data.bmi || null,
-        }));
-        setAvatarPreview(data.avatar_url || null);
+        });
+        setAvatarPreview(data.avatar_url || null); // Set avatar preview from fetched URL
       }
       setLoading(false);
     };
 
     fetchProfile();
-  }, [user.id, supabase]);
+  }, [user.id, supabase]); // Depend on user.id and supabase to refetch if they change
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -277,8 +275,9 @@ export default function InitialMedicalInfoForm({
     const calculatedBmi = calculateBMI(formData.weight, formData.height);
 
     try {
+      // Data to be saved to the 'profiles' table
       const profileDataToSave = {
-        id: user.id,
+        id: user.id, // Ensure ID is explicitly included for upsert, although user.id is already there from context
         email: user.email || null,
         date_of_birth: formData.date_of_birth,
         gender: formData.gender,
@@ -286,36 +285,37 @@ export default function InitialMedicalInfoForm({
         height: Number(formData.height),
         common_diseases: formData.common_diseases,
         avatar_url: newAvatarUrl,
-        has_initial_medical_info: true,
-        bmi: calculatedBmi,
+        has_initial_medical_info: true, // Mark as true upon submission
       };
 
+      // Perform an upsert operation on the 'profiles' table
       const { error } = await supabase
         .from("profiles")
+        // Pass the entire profileDataToSave directly, as it now includes `id` and `email`
         .upsert(profileDataToSave, { onConflict: "id" });
 
       if (error) {
         throw error;
       }
 
+      // Optionally, update user_metadata for the has_initial_medical_info flag.
       const { error: userUpdateError } = await supabase.auth.updateUser({
         data: {
+          ...formData,
+          avatar_url: newAvatarUrl,
           has_initial_medical_info: true,
           bmi: calculatedBmi,
         },
       });
 
-      if (userUpdateError) {
-        console.warn(
-          "Could not update user_metadata:",
-          JSON.stringify(userUpdateError, null, 2)
-        );
+      if (error) {
+        throw error;
       }
 
       toast.success("Basic medical information saved successfully!");
       onInfoSaved();
     } catch (err: any) {
-      console.error("Error saving medical info:", JSON.stringify(err, null, 2));
+      console.error("Error saving medical info:", err);
       toast.error(`Failed to save info: ${err.message || "Please try again."}`);
     } finally {
       setLoading(false);
