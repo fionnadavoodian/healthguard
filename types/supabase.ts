@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      diabetes_assessments: {
+        Row: {
+          age: number | null
+          blood_glucose_level: number | null
+          bmi: number | null
+          created_at: string | null
+          gender: string | null
+          hba1c_level: number | null
+          heart_disease: boolean | null
+          hypertension: boolean | null
+          id: string
+          prediction_category: string | null
+          prediction_score: number | null
+          smoking_history: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          age?: number | null
+          blood_glucose_level?: number | null
+          bmi?: number | null
+          created_at?: string | null
+          gender?: string | null
+          hba1c_level?: number | null
+          heart_disease?: boolean | null
+          hypertension?: boolean | null
+          id?: string
+          prediction_category?: string | null
+          prediction_score?: number | null
+          smoking_history?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          age?: number | null
+          blood_glucose_level?: number | null
+          bmi?: number | null
+          created_at?: string | null
+          gender?: string | null
+          hba1c_level?: number | null
+          heart_disease?: boolean | null
+          hypertension?: boolean | null
+          id?: string
+          prediction_category?: string | null
+          prediction_score?: number | null
+          smoking_history?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

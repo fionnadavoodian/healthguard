@@ -1,90 +1,140 @@
-# ml_scripts/api_server.py
+# api_server.py
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
+import numpy as np
+import logging
 import os
-import uvicorn
-import pandas as pd
 
-app = FastAPI(
-    title="HealthGuard ML Inference API",
-    description="API for diabetes risk prediction using a trained ML model.",
-    version="1.0.0"
+# Configure logging to show more details
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+app = FastAPI()
+
+# Add CORS middleware
+origins = [
+    "http://localhost:3000",  # Your Next.js frontend URL
+    "http://127.0.0.1:3000",
+    # Add your deployed frontend URL here when you deploy
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Define the input data structure expected by the API
-class DiabetesInput(BaseModel):
+# Load the trained model and scaler globally when the app starts
+model = None
+scaler = None
+
+@app.on_event("startup") # Use FastAPI's startup event for model loading
+async def load_ml_models():
+    global model, scaler
+    try:
+        model_path = "model/diabetes_model.pkl"
+        scaler_path = "model/scaler.pkl"
+
+        if os.path.exists(model_path) and os.path.exists(scaler_path):
+            model = joblib.load(model_path)
+            scaler = joblib.load(scaler_path)
+            logger.info(f"ML model loaded successfully from {model_path} and {scaler_path}")
+        else:
+            logger.error(f"Model or scaler file not found. Ensure '{model_path}' and '{scaler_path}' exist.")
+            raise RuntimeError("ML model or scaler file not found. Server cannot start.")
+    except Exception as e:
+        logger.error(f"Error loading ML model at startup: {e}", exc_info=True)
+        raise RuntimeError(f"Failed to load ML model: {e}")
+
+class DiabetesData(BaseModel):
     gender: str
-    age: int
+    age: float
     hypertension: int
     heart_disease: int
     smoking_history: str
     bmi: float
     HbA1c_level: float
-    blood_glucose_level: int
+    blood_glucose_level: float
 
-# Load the trained model
-model_path = os.path.join(os.path.dirname(__file__), 'diabetes_model.joblib')
-model = None
-try:
-    model = joblib.load(model_path)
-    print(f"Model loaded successfully from {model_path}")
-except FileNotFoundError:
-    print(f"Error: Model file not found at {model_path}. Please run train_diabetes_model.py first.")
-    # Exit or raise error if model is critical for server start
-    exit(1)
-except Exception as e:
-    print(f"Error loading model: {e}")
-    exit(1)
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "FastAPI server is running and healthy."}
 
+@app.post("/predict")
+async def predict_diabetes(data: DiabetesData):
+    logger.info(f"Received prediction request with data: {data.model_dump_json()}")
 
-@app.get("/")
-async def read_root():
-    return {"message": "HealthGuard ML Inference API is running. Go to /docs for API documentation."}
+    if model is None or scaler is None:
+        logger.error("Prediction requested but ML model or scaler is not loaded (should have failed at startup).")
+        raise HTTPException(status_code=500, detail="ML prediction service not ready. Model or scaler failed to load during startup.")
 
-@app.post("/predict_diabetes")
-async def predict_diabetes(data: DiabetesInput):
-    if model is None:
-        raise HTTPException(status_code=500, detail="ML model not loaded.")
+    gender_map = {"Female": 0, "Male": 1, "Other": 2}
+    smoking_history_map = {
+        "never": 0, "No Info": 1, "current": 2,
+        "former": 3, "ever": 4, "not current": 5
+    }
 
-    # Convert input data to a pandas DataFrame
-    # Ensure column order matches the training data's preprocessor expectations
-    input_df = pd.DataFrame([data.dict()])
-
-    # Define the expected columns for preprocessing (order matters!)
-    # These must match the `numerical_features` and `categorical_features`
-    # used in `train_diabetes_model.py` and the order in `ColumnTransformer`.
-    expected_columns = [
-        'age', 'bmi', 'HbA1c_level', 'blood_glucose_level', 'hypertension', 'heart_disease', # Numerical
-        'gender', 'smoking_history' # Categorical
-    ]
-
-    # Reorder columns to match the training data's expected order
-    # This is critical because ColumnTransformer relies on column position/name.
     try:
-        processed_input = input_df[expected_columns]
-        # Make prediction (the loaded model pipeline handles preprocessing internally)
-        prediction_raw = model.predict(processed_input)[0]
-        prediction_proba = model.predict_proba(processed_input)[0].tolist() # Probability for both classes
+        gender_encoded = gender_map.get(data.gender)
+        smoking_history_encoded = smoking_history_map.get(data.smoking_history)
 
-        # Assuming class 1 is 'diabetes' and class 0 is 'no diabetes'
-        diabetes_proba = prediction_proba[1]
+        if gender_encoded is None:
+            logger.error(f"Invalid gender value: {data.gender}")
+            raise HTTPException(status_code=422, detail=f"Invalid 'gender' value: {data.gender}. Must be one of {list(gender_map.keys())}")
+        if smoking_history_encoded is None:
+            logger.error(f"Invalid smoking_history value: {data.smoking_history}")
+            raise HTTPException(status_code=422, detail=f"Invalid 'smoking_history' value: {data.smoking_history}. Must be one of {list(smoking_history_map.keys())}")
+
+        # Construct features array with explicit types for robustness
+        features = np.array([
+            float(gender_encoded), # Ensure float type
+            float(data.age),
+            float(data.hypertension),
+            float(data.heart_disease),
+            float(smoking_history_encoded), # Ensure float type
+            float(data.bmi),
+            float(data.HbA1c_level),
+            float(data.blood_glucose_level)
+        ]).reshape(1, -1)
+
+        logger.info(f"Features prepared for scaling (before reshape): {features.flatten()}")
+        logger.info(f"Features array shape: {features.shape}")
+        logger.info(f"Features array dtype: {features.dtype}")
+
+
+        scaled_features = scaler.transform(features)
+        logger.info(f"Features scaled: {scaled_features}")
+        logger.info(f"Scaled features shape: {scaled_features.shape}")
+        logger.info(f"Scaled features dtype: {scaled_features.dtype}")
+
+
+        prediction_proba = model.predict_proba(scaled_features)[:, 1][0]
+        prediction_class = (prediction_proba > 0.5).astype(int)
 
         category = "Low Risk"
-        if diabetes_proba > 0.7:
+        if prediction_proba >= 0.7:
             category = "High Risk"
-        elif diabetes_proba > 0.4:
+        elif prediction_proba >= 0.4:
             category = "Medium Risk"
 
-        return {
-            "prediction": int(prediction_raw), # 0 or 1
-            "probability": round(diabetes_proba, 4), # Probability of diabetes
-            "category": category,
-            "message": "Prediction successful"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction failed due to processing error: {e}")
+        logger.info(f"Prediction made: class={prediction_class}, probability={prediction_proba}, category={category}")
 
-# To run this server: uvicorn api_server:app --host 0.0.0.0 --port 8000 --reload
-# --reload is for development, remove in production
-# host 0.0.0.0 allows access from other machines/docker containers
+        return {
+            "prediction": prediction_class.item(),
+            "probability": prediction_proba.item(),
+            "category": category,
+        }
+
+    except KeyError as e:
+        logger.error(f"KeyError during feature mapping: {e}. Check categorical values.", exc_info=True)
+        raise HTTPException(status_code=422, detail=f"Missing or invalid categorical value: {e}. Please ensure all string inputs match expected categories.")
+    except ValueError as e:
+        logger.error(f"ValueError during data processing or prediction: {e}", exc_info=True)
+        raise HTTPException(status_code=422, detail=f"Data processing error: {e}. Ensure numerical inputs are valid.")
+    except Exception as e:
+        logger.error(f"Unhandled error during prediction: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred during prediction: {e}")
