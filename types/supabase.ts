@@ -12,6 +12,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bmi: number | null
           common_diseases: string[] | null
           created_at: string | null
           date_of_birth: string | null
@@ -26,6 +27,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bmi?: number | null
           common_diseases?: string[] | null
           created_at?: string | null
           date_of_birth?: string | null
@@ -40,6 +42,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bmi?: number | null
           common_diseases?: string[] | null
           created_at?: string | null
           date_of_birth?: string | null

@@ -1,7 +1,7 @@
 // components/InitialMedicalInfoForm.tsx
 "use client";
 
-import { useState, useEffect } from "react"; // Ensure useEffect is imported
+import { useState, useEffect } from "react";
 import { SupabaseClient, User } from "@supabase/supabase-js";
 import toast from "react-hot-toast";
 import LoadingButton from "./LoadingButton";
@@ -14,6 +14,7 @@ interface InitialMedicalInfoFormProps {
   user: User;
   supabase: SupabaseClient;
   onInfoSaved: () => void;
+  isEditMode?: boolean; // Add this prop
 }
 
 // Define an interface for your form data to explicitly type it
@@ -22,8 +23,9 @@ interface FormData {
   gender: string;
   weight: string;
   height: string;
-  common_diseases: string[]; // Explicitly define as string array
+  common_diseases: string[];
   avatar_url: string;
+  bmi: number | null;
 }
 
 const COMMON_DISEASES = [
@@ -38,10 +40,28 @@ const COMMON_DISEASES = [
 
 const GENDER_OPTIONS = ["Male", "Female", "Other", "Prefer not to say"];
 
+// Helper to calculate BMI
+const calculateBMI = (weightKg: number | string, heightCm: number | string) => {
+  const parsedWeight = Number(weightKg);
+  const parsedHeight = Number(heightCm);
+  if (
+    !parsedWeight ||
+    !parsedHeight ||
+    parsedWeight <= 0 ||
+    parsedHeight <= 0
+  ) {
+    return null;
+  }
+  const heightM = parsedHeight / 100;
+  const bmi = parsedWeight / (heightM * heightM);
+  return parseFloat(bmi.toFixed(2));
+};
+
 export default function InitialMedicalInfoForm({
   user,
   supabase,
   onInfoSaved,
+  isEditMode = false, // Set default value to false
 }: InitialMedicalInfoFormProps) {
   // Use the FormData interface to type the useState hook
   const [formData, setFormData] = useState<FormData>({
@@ -49,8 +69,9 @@ export default function InitialMedicalInfoForm({
     gender: "",
     weight: "",
     height: "",
-    common_diseases: [], // This is now correctly typed as string[]
+    common_diseases: [],
     avatar_url: "",
+    bmi: null,
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{
@@ -62,7 +83,7 @@ export default function InitialMedicalInfoForm({
     avatar?: string;
   }>({});
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null); // Initial preview is null, fetched data will set it
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   // Fetch initial profile data when the component mounts or user/supabase changes
   useEffect(() => {
@@ -72,67 +93,79 @@ export default function InitialMedicalInfoForm({
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single(); // Use single() to get a single record for the current user
+        .single();
 
       if (error && error.code !== "PGRST116") {
-        // PGRST116 means no rows found (e.g., brand new user)
         console.error(
           "Error fetching profile:",
           JSON.stringify(error, null, 2)
-        ); // Improved error logging
+        );
         toast.error("Failed to load profile data.");
       } else if (data) {
-        // If data is found, populate the form state
-        setFormData({
+        setFormData((prev) => ({
+          ...prev,
           date_of_birth: data.date_of_birth || "",
           gender: data.gender || "",
-          weight: data.weight?.toString() || "", // Convert number to string for input
-          height: data.height?.toString() || "", // Convert number to string for input
+          weight: data.weight?.toString() || "",
+          height: data.height?.toString() || "",
           common_diseases: Array.isArray(data.common_diseases)
             ? data.common_diseases
             : [],
           avatar_url: data.avatar_url || "",
-        });
-        setAvatarPreview(data.avatar_url || null); // Set avatar preview from fetched URL
+          bmi: data.bmi || null,
+        }));
+        setAvatarPreview(data.avatar_url || null);
       }
       setLoading(false);
     };
 
     fetchProfile();
-  }, [user.id, supabase]); // Depend on user.id and supabase to refetch if they change
+  }, [user.id, supabase]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
+    const checked =
+      type === "checkbox" ? (e.target as HTMLInputElement).checked : false;
 
-    if (name === "common_diseases") {
-      setFormData((prev) => {
+    setFormData((prev) => {
+      let updatedData = { ...prev, [name]: value };
+
+      if (name === "common_diseases") {
         const currentDiseases = Array.isArray(prev.common_diseases)
           ? prev.common_diseases
           : [];
         if (checked) {
           if (value === "None") {
-            return { ...prev, common_diseases: ["None"] };
+            updatedData.common_diseases = ["None"];
           } else {
-            return {
-              ...prev,
-              common_diseases: [
-                ...currentDiseases.filter((d: string) => d !== "None"),
-                value,
-              ],
-            };
+            updatedData.common_diseases = [
+              ...currentDiseases.filter((d: string) => d !== "None"),
+              value,
+            ];
           }
         } else {
-          return {
-            ...prev,
-            common_diseases: currentDiseases.filter((d: string) => d !== value),
-          };
+          updatedData.common_diseases = currentDiseases.filter(
+            (d: string) => d !== value
+          );
         }
-      });
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+      }
+
+      if (
+        (name === "weight" || name === "height") &&
+        updatedData.weight &&
+        updatedData.height
+      ) {
+        updatedData.bmi = calculateBMI(updatedData.weight, updatedData.height);
+      } else if (
+        (name === "weight" && !updatedData.weight) ||
+        (name === "height" && !updatedData.height)
+      ) {
+        updatedData.bmi = null;
+      }
+      return updatedData;
+    });
 
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => {
@@ -231,7 +264,7 @@ export default function InitialMedicalInfoForm({
     }
 
     setLoading(true);
-    let newAvatarUrl = formData.avatar_url;
+    let newAvatarUrl: string | null = formData.avatar_url;
 
     if (avatarFile) {
       newAvatarUrl = await uploadAvatar();
@@ -241,10 +274,11 @@ export default function InitialMedicalInfoForm({
       }
     }
 
+    const calculatedBmi = calculateBMI(formData.weight, formData.height);
+
     try {
-      // Data to be saved to the 'profiles' table
       const profileDataToSave = {
-        id: user.id, // Ensure ID is explicitly included for upsert, although user.id is already there from context
+        id: user.id,
         email: user.email || null,
         date_of_birth: formData.date_of_birth,
         gender: formData.gender,
@@ -252,23 +286,22 @@ export default function InitialMedicalInfoForm({
         height: Number(formData.height),
         common_diseases: formData.common_diseases,
         avatar_url: newAvatarUrl,
-        has_initial_medical_info: true, // Mark as true upon submission
+        has_initial_medical_info: true,
+        bmi: calculatedBmi,
       };
 
-      // Perform an upsert operation on the 'profiles' table
       const { error } = await supabase
         .from("profiles")
-        // Pass the entire profileDataToSave directly, as it now includes `id` and `email`
         .upsert(profileDataToSave, { onConflict: "id" });
 
       if (error) {
         throw error;
       }
 
-      // Optionally, update user_metadata for the has_initial_medical_info flag.
       const { error: userUpdateError } = await supabase.auth.updateUser({
         data: {
           has_initial_medical_info: true,
+          bmi: calculatedBmi,
         },
       });
 
@@ -294,33 +327,45 @@ export default function InitialMedicalInfoForm({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="flex items-center justify-center min-h-[calc(100vh-var(--navbar-height))] px-4 py-4 md:py-6"
+      // Adjusted class for padding based on isEditMode
+      className={`flex items-center justify-center min-h-[calc(100vh-var(--navbar-height))] px-4 md:px-6 ${isEditMode ? "py-0" : "py-4 md:py-6"}`}
     >
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-4xl overflow-hidden transform transition-all duration-300 hover:shadow-3xl">
-        {/* Header with gradient */}
-        <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white text-center">
-          <h2 className="text-xl sm:text-2xl font-bold mb-1">
-            Complete Your Health Profile
-          </h2>
-          <p className="text-sm sm:text-base opacity-90">
-            Just a few details to unlock personalized health insights.
-          </p>
-        </div>
+      <div
+        className={`bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-4xl overflow-hidden transform transition-all duration-300 ${isEditMode ? "" : "hover:shadow-3xl"}`}
+      >
+        {/* Header with gradient - conditionally rendered based on isEditMode */}
+        {!isEditMode && (
+          <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white text-center">
+            <h2 className="text-xl sm:text-2xl font-bold mb-1">
+              Complete Your Health Profile
+            </h2>
+            <p className="text-sm sm:text-base opacity-90">
+              Just a few details to unlock personalized health insights.
+            </p>
+          </div>
+        )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="p-4 sm:p-6 space-y-4 sm:space-y-6"
-        >
+        {/* Content for the form */}
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          {/* Removed isEditMode heading here as it's handled by EditProfilePage */}
           {/* Avatar Upload */}
           <div className="flex flex-col items-center gap-2 mb-2">
             <label htmlFor="avatar-upload" className="relative cursor-pointer">
-              {avatarPreview ? (
+              {avatarPreview || formData.avatar_url ? ( // If either has a URL
                 <img
-                  src={avatarPreview}
-                  alt="Avatar Preview"
+                  src={avatarPreview || formData.avatar_url} // Use preview first, then saved URL
+                  alt="User Avatar" // More generic alt text
                   className="w-16 h-16 rounded-full object-cover border-3 border-indigo-400 dark:border-indigo-600 shadow-md"
+                  onError={(e) => {
+                    // Add onError handler to show placeholder if image fails to load
+                    e.currentTarget.style.display = "none"; // Hide broken image
+                    // Optionally, set a state to show the default icon
+                    // For simplicity, we rely on the next div to show if this fails
+                    setAvatarPreview(null); // Clear preview to force placeholder on next render
+                  }}
                 />
               ) : (
+                // Fallback to generic icon if no URL is present or image fails to load
                 <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-300 border-3 border-indigo-400 dark:border-indigo-600 shadow-md">
                   <PhotoIcon className="w-8 h-8" />
                 </div>
@@ -457,7 +502,18 @@ export default function InitialMedicalInfoForm({
             )}
           </div>
 
-          <div className="flex justify-center pt-3">
+          <div className="flex justify-end pt-3 gap-2">
+            {" "}
+            {/* Changed to justify-end and added gap-2 */}
+            {isEditMode && ( // Conditionally render Cancel button
+              <button
+                type="button" // Important: type="button" to prevent form submission
+                onClick={() => onInfoSaved()} // onInfoSaved() will also set isEditing to false in parent
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                Cancel
+              </button>
+            )}
             <LoadingButton
               type="submit"
               loading={loading}
@@ -466,7 +522,7 @@ export default function InitialMedicalInfoForm({
               Save My Profile
             </LoadingButton>
           </div>
-        </form>
+        </div>
       </div>
     </motion.div>
   );

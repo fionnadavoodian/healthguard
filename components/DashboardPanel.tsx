@@ -28,10 +28,10 @@ import {
   IdentificationIcon,
 } from "@heroicons/react/24/outline";
 import DashboardHeader from "./DashboardHeader";
-import React from "react"; // <--- Make sure React is imported for Fragments
+import React from "react";
 
 interface DashboardPanelProps {
-  user: User;
+  user: User | null; // Allow user to be null
 }
 
 // Helper to calculate BMI and categorize it
@@ -60,7 +60,6 @@ const calculateAge = (dobString: string) => {
   return age;
 };
 
-// Define your assessments and their metadata keys for completion tracking
 const ASSESSMENTS_INFO = [
   {
     id: "gastric-cancer",
@@ -80,10 +79,14 @@ const ASSESSMENTS_INFO = [
     completedFlag: "heart_disease_completed",
     icon: <HeartIcon className="w-5 h-5" />,
   },
-  // Add other assessments here with unique icons
 ];
 
 export default function DashboardPanel({ user }: DashboardPanelProps) {
+  // Defensive check: If user is null, don't attempt to render
+  if (!user) {
+    return null; // Or you could return a loading spinner or an error message
+  }
+
   const userDateOfBirth = user.user_metadata?.date_of_birth;
   const userGender = user.user_metadata?.gender;
   const userWeight = user.user_metadata?.weight;
@@ -96,7 +99,6 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
     userHeight
   );
 
-  // Calculate assessment completion progress
   const completedAssessmentsCount = ASSESSMENTS_INFO.filter(
     (assessment) => user.user_metadata?.[assessment.completedFlag] === true
   ).length;
@@ -113,7 +115,6 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
 
   const PIE_COLORS = ["#4CAF50", "#E0E0E0"];
 
-  // Example BMI Chart Data (for BarChart visualization of categories)
   const bmiChartCategories = [
     { name: "Underweight", min: 0, max: 18.5, color: "#FFC107" },
     { name: "Normal weight", min: 18.5, max: 24.9, color: "#4CAF50" },
@@ -140,22 +141,20 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
       transition={{ duration: 0.5 }}
       className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col flex-grow min-h-0"
     >
-      {/* Dashboard Header acting as a Navbar */}
       <DashboardHeader user={user} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow min-h-0">
-        {/* User Profile Card */}
         <motion.div
-          whileHover={{ scale: 1.01 }}
+          // Removed whileHover={{ scale: 1.01 }} to stop bouncing
           className="lg:col-span-1 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center justify-between min-h-0"
         >
           <div>
-            <div className="w-16 h-16 rounded-full bg-indigo-500 dark:bg-indigo-700 flex items-center justify-center text-white text-2xl font-semibold mb-3 shadow-lg">
+            <div className="w-16 h-16 rounded-full bg-indigo-500 dark:bg-indigo-700 flex items-center justify-center text-white text-2xl font-semibold mb-3 shadow-lg overflow-hidden flex-shrink-0">
               {user.user_metadata?.avatar_url ? (
                 <img
                   src={user.user_metadata.avatar_url}
                   alt={user.user_metadata?.name || "User"}
-                  className="w-full h-full rounded-full object-cover"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <UserCircleIcon className="w-10 h-10 text-white" />
@@ -201,9 +200,8 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
           </Link>
         </motion.div>
 
-        {/* BMI Diagram Card */}
         <motion.div
-          whileHover={{ scale: 1.01 }}
+          // Removed whileHover={{ scale: 1.01 }} to stop bouncing
           className="lg:col-span-1 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center min-h-0"
         >
           <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">
@@ -264,10 +262,9 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
           )}
         </motion.div>
 
-        {/* Assessment Progress Card */}
         <motion.div
-          whileHover={{ scale: 1.01 }}
-          className="lg:col-span-1 bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-4 rounded-2xl shadow-xl border border-blue-400 dark:border-indigo-700 flex flex-col items-center justify-center relative overflow-hidden min-h-0"
+          // Removed whileHover={{ scale: 1.01 }} to stop bouncing
+          className="lg:col-span-1 bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-4 rounded-2xl shadow-xl border border-blue-400 dark:border-indigo-700 flex flex-col items-center justify-center min-h-0"
         >
           <div
             className="absolute inset-0 opacity-10"
@@ -316,7 +313,6 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
           </p>
         </motion.div>
 
-        {/* Assessments List Section (Full Width) */}
         <div className="lg:col-span-3 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 flex-grow min-h-0 overflow-auto">
           <h2 className="text-xl font-semibold mb-3 text-gray-800 dark:text-white">
             Your Health Assessments
