@@ -1,3 +1,4 @@
+// components/ResourceList.tsx
 import React from "react";
 import { Resource } from "../types/disease";
 

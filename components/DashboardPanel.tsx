@@ -268,7 +268,6 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
         >
           <div
             className="absolute inset-0 opacity-10 -z-10" // Added -z-10 here
-            style={{ backgroundImage: "url(/abstract-pattern.svg)" }}
           ></div>
           <h2 className="text-lg font-semibold mb-3 text-white z-10">
             Assessment Progress

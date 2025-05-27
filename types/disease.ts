@@ -1,3 +1,4 @@
+// types/disease.ts
 export interface Performance {
     sensitivity?: string;
     specificity?: string;

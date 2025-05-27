@@ -15,13 +15,21 @@ type ProfilesTable = Database["public"]["Tables"]["profiles"]["Row"];
 
 interface FormData {
   gender: string;
-  age: number | "";
-  hypertension: number | "";
-  heart_disease: number | "";
+  age: number;
+  hypertension: number;
+  heart_disease: number;
   smoking_history: string;
-  bmi: number | "";
-  HbA1c_level: number | "";
-  blood_glucose_level: number | "";
+  bmi: number;
+  HbA1c_level: number;
+  blood_glucose_level: number;
+}
+
+// Updated interface to match backend's 'probability_of_diabetes'
+interface PredictionResult {
+  prediction: number;
+  probability_of_diabetes: number; // Changed to match backend
+  category: string; // This needs to be generated on the backend or derived on the frontend
+  message?: string;
 }
 
 export default function DiabetesAssessmentPage() {
@@ -31,22 +39,18 @@ export default function DiabetesAssessmentPage() {
 
   const [formData, setFormData] = useState<FormData>({
     gender: "",
-    age: "",
-    hypertension: "",
-    heart_disease: "",
+    age: 0,
+    hypertension: 0,
+    heart_disease: 0,
     smoking_history: "",
-    bmi: "",
-    HbA1c_level: "",
-    blood_glucose_level: "",
+    bmi: 0,
+    HbA1c_level: 0,
+    blood_glucose_level: 0,
   });
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
-  const [predictionResult, setPredictionResult] = useState<{
-    prediction: number;
-    probability: number;
-    category: string;
-    message?: string;
-  } | null>(null);
+  const [predictionResult, setPredictionResult] =
+    useState<PredictionResult | null>(null); // Use the updated interface
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -127,8 +131,9 @@ export default function DiabetesAssessmentPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setPredictionResult(null);
+    setPredictionResult(null); // Reset previous results
 
+    // FormData validation (as you have it)
     const requiredFields: (keyof FormData)[] = [
       "gender",
       "age",
@@ -139,7 +144,6 @@ export default function DiabetesAssessmentPage() {
       "HbA1c_level",
       "blood_glucose_level",
     ];
-
     for (const field of requiredFields) {
       if (
         formData[field] === "" ||
@@ -153,8 +157,10 @@ export default function DiabetesAssessmentPage() {
       }
     }
 
+    console.log("Frontend: Sending form data:", formData);
+
     try {
-      const response = await fetch("/api/diabetes-predict", {
+      const response = await fetch("/api/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -162,19 +168,82 @@ export default function DiabetesAssessmentPage() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      console.log("Frontend: Raw response object from API:", response);
 
-      if (!response.ok) {
-        setError(
-          data.error || "An unexpected error occurred during prediction."
+      const responseText = await response.text();
+      console.log("Frontend: Raw response text from API:", responseText);
+
+      let data: PredictionResult; // Assert type for data
+      try {
+        data = JSON.parse(responseText);
+        console.log("Frontend: Data parsed from API response:", data);
+      } catch (parseError) {
+        console.error(
+          "Frontend: Failed to parse API response as JSON:",
+          parseError
         );
+        console.error("Frontend: API response text was:", responseText);
+        setError(
+          `Received an invalid response format from the server. Status: ${response.status}`
+        );
+        setLoading(false);
         return;
       }
 
-      setPredictionResult(data);
-    } catch (err) {
-      console.error("Failed to submit form:", err);
-      setError("Network error or server unavailable.");
+      if (!response.ok) {
+        console.error(
+          "Frontend: API response NOT OK. Status:",
+          response.status,
+          "Data:",
+          data
+        );
+        setError(
+          (data as any)?.error || // Cast to 'any' to access error property safely if it exists
+            `An unexpected error occurred during prediction (Status: ${response.status})`
+        );
+        setLoading(false);
+        return;
+      }
+
+      // **Crucial Change:** Map backend keys to frontend expectations
+      // Also, derive 'category' if your backend doesn't send it directly
+      if (
+        data &&
+        data.prediction !== undefined &&
+        data.probability_of_diabetes !== undefined
+      ) {
+        const prediction = data.prediction;
+        const probability = data.probability_of_diabetes;
+        let category = "Low Risk"; // Default
+
+        if (prediction === 1) {
+          // Assuming prediction 1 means diabetes
+          category = "High Risk";
+        } else if (probability >= 0.5) {
+          // Example threshold for medium risk if prediction is 0
+          category = "Medium Risk";
+        }
+        // You might want to refine these category thresholds based on your model's output interpretation
+
+        setPredictionResult({
+          prediction: prediction,
+          probability_of_diabetes: probability, // Keep this name for display
+          category: category,
+          message: data.message, // Include if your backend provides it
+        });
+      } else {
+        console.error(
+          "Frontend: API response OK, but data is missing expected fields (prediction, probability_of_diabetes):",
+          data
+        );
+        setError("Prediction data from the server is incomplete.");
+      }
+    } catch (err: any) {
+      console.error("Frontend: Error during fetch operation:", err);
+      setError(
+        err.message ||
+          "Network error or server unavailable. Please check your connection or if the server is running."
+      );
     } finally {
       setLoading(false);
     }
@@ -199,23 +268,20 @@ export default function DiabetesAssessmentPage() {
       className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col flex-grow min-h-0"
     >
       <div className="flex-grow flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg p-6">
-          {" "}
-          {/* Removed space-y-6 from Card to manage spacing with gap-y */}
-          <h1 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-4">
-            {" "}
-            {/* Added mb-4 for heading spacing */}
+        <Card className="w-full max-w-lg p-6 space-y-6">
+          <h1 className="text-2xl font-bold text-center text-gray-800 dark:text-white">
             Diabetes Risk Assessment
           </h1>
-          <p className="text-center text-gray-600 dark:text-gray-300 mb-6">
-            {" "}
-            {/* Added mb-6 for paragraph spacing */}
+          <p className="text-center text-gray-600 dark:text-gray-300">
             Provide your health information to get a diabetes risk prediction.
           </p>
+
           <form
             onSubmit={handleSubmit}
             className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
           >
+            {" "}
+            {/* Adjusted gap-x and gap-y */}
             {/* Gender */}
             <div>
               <label
@@ -243,7 +309,6 @@ export default function DiabetesAssessmentPage() {
                 <option value="Other">Other</option>
               </select>
             </div>
-
             {/* Age */}
             <Input
               label="Age"
@@ -260,7 +325,6 @@ export default function DiabetesAssessmentPage() {
                   : ""
               }`}
             />
-
             {/* Hypertension */}
             <div>
               <label
@@ -282,7 +346,6 @@ export default function DiabetesAssessmentPage() {
                 <option value={1}>Yes</option>
               </select>
             </div>
-
             {/* Heart Disease */}
             <div>
               <label
@@ -304,7 +367,6 @@ export default function DiabetesAssessmentPage() {
                 <option value={1}>Yes</option>
               </select>
             </div>
-
             {/* Smoking History */}
             <div className="md:col-span-2">
               <label
@@ -336,7 +398,6 @@ export default function DiabetesAssessmentPage() {
                 </option>
               </select>
             </div>
-
             {/* BMI */}
             <Input
               label="BMI"
@@ -354,7 +415,6 @@ export default function DiabetesAssessmentPage() {
                   : ""
               }`}
             />
-
             {/* HbA1c Level */}
             <Input
               label="HbA1c Level (%)"
@@ -367,7 +427,6 @@ export default function DiabetesAssessmentPage() {
               required
               className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
             />
-
             {/* Blood Glucose Level */}
             <Input
               label="Blood Glucose Level (mg/dL)"
@@ -379,22 +438,20 @@ export default function DiabetesAssessmentPage() {
               required
               className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
             />
-
             {error && (
               <p className="text-red-500 text-sm text-center col-span-full">
                 {error}
               </p>
             )}
-
             <LoadingButton
               type="submit"
               loading={loading}
-              // Ensured full width and project blue color
               className="w-full h-12 col-span-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             >
               Get Prediction
             </LoadingButton>
           </form>
+
           {predictionResult && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -410,7 +467,11 @@ export default function DiabetesAssessmentPage() {
             >
               <h3 className="font-semibold text-lg">Prediction Result:</h3>
               <p className="text-xl font-bold">{predictionResult.category}</p>
-              <p>Risk Score: {predictionResult.probability.toFixed(4)}</p>
+              <p>
+                Risk Score:{" "}
+                {predictionResult.probability_of_diabetes.toFixed(4)}
+              </p>{" "}
+              {/* Display the corrected key */}
               <p className="text-sm mt-2">
                 This prediction is based on the provided data and our model's
                 assessment. Please consult a healthcare professional for
