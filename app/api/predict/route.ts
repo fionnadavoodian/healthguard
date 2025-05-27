@@ -1,20 +1,23 @@
+// app/api/predict/route.ts
 import { NextRequest, NextResponse } from "next/server";
+
 
 console.log("Node.js Version in route.ts:", process.version);
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest) { 
   try {
+   
     const data = await req.json();
 
     console.log("Route.ts: Received data from frontend:", data);
 
     const response = await fetch("/api/predict", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify(data),
+});
 
     console.log("Route.ts: Response status from FastAPI:", response.status);
 

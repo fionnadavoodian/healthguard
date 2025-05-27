@@ -21,25 +21,37 @@
     ]
   },
   {
-    "id": 2,
-    "title": "Diabetes Expert System",
-    "description": "A fuzzy rule-based system that combines the cosine amplitude method with expert-derived rules to perform early diagnosis of diabetes. Evaluated using the Pima Indians Diabetes dataset, the system demonstrates high accuracy in classification.",
-    "banner": "/diabetes.svg",
-    "performance": {
-      "accuracy": "96.5%",
-      "dataset": "Biosat Diabetes Dataset"
+  "id": 2,
+  "title": "Diabetes Expert System",
+  "description": "A machine learning-based expert system for early diagnosis of diabetes, trained on the Diabetes Prediction Dataset from Kaggle. The model leverages a rule-enhanced pipeline with feature engineering and classification optimization to ensure high accuracy. It demonstrates robust generalization capabilities, making it a reliable support tool for clinical decision-making.",
+  "banner": "/diabetes.svg",
+  "performance": {
+    "accuracy": "96.05%",
+    "precision": {
+      "class_0": "97%",
+      "class_1": "86%"
     },
-    "resources": [
-      {
-        "type": "PMC",
-        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8659829/"
-      },
-      {
-        "type": "MDPI",
-        "url": "https://www.mdpi.com/1424-8220/21/23/8095"
-      }
-    ]
+    "recall": {
+      "class_0": "99%",
+      "class_1": "64%"
+    },
+    "f1_score": {
+      "class_0": "98%",
+      "class_1": "73%"
+    },
+    "dataset": "Diabetes Prediction Dataset (Kaggle)"
   },
+  "resources": [
+    {
+      "type": "Kaggle",
+      "url": "https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset?resource=download"
+    },
+    {
+      "type": "MDPI",
+      "url": "https://www.mdpi.com/1424-8220/21/23/8095"
+    }
+  ]
+},
   {
     "id": 3,
     "title": "Heart Disease Expert System",

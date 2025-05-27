@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AuthorCard } from "./AuthorCard";
 import authorData from "../app/data/authors.json";
+
 export default function AboutUs() {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollWrapperRef = useRef<HTMLDivElement>(null);
@@ -39,14 +40,16 @@ export default function AboutUs() {
   }, []);
 
   return (
-    <section id="authors" className="py-20 bg-gray-100 dark:bg-gray-900">
-      <h2 className="text-4xl font-bold text-center text-gray-800 dark:text-white mb-12 px-4">
+    <section id="authors" className="py-20 bg-background text-foreground">
+      <h2 className="text-4xl font-bold text-center mb-12 px-4">
         Meet the team
       </h2>
 
       <div className="relative overflow-hidden w-full px-4" ref={containerRef}>
-        <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-gray-100 dark:from-gray-900 to-transparent z-10" />
-        <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-gray-100 dark:from-gray-900 to-transparent z-10" />
+        {/* Left gradient fade */}
+        <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-background to-transparent z-10" />
+        {/* Right gradient fade */}
+        <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-background to-transparent z-10" />
 
         <div
           ref={scrollWrapperRef}

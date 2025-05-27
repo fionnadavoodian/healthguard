@@ -26,8 +26,7 @@ export function DiseaseCard({ disease }: { disease: Disease }) {
           className="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 to-transparent flex items-end p-4">
-          {/* Theme color for the title (it's already white, but let's make it explicit for consistency if theme changes) */}
-          <h3 className="text-2xl font-bold text-gray-200 dark:text-white leading-tight">
+          <h3 className="text-2xl font-bold text-blue-600 dark:text-gray-200 leading-tight">
             {disease.title}
           </h3>
         </div>
@@ -37,7 +36,7 @@ export function DiseaseCard({ disease }: { disease: Disease }) {
       <div className="flex-grow p-6 flex flex-col justify-between">
         {/* Description */}
         <div>
-          <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-3">
+          <p className="text-gray-900 dark:text-gray-700 text-sm leading-relaxed mb-3">
             {shouldTruncate && !isExpanded
               ? `${disease.description.substring(0, maxDescriptionLength).trim()}...`
               : disease.description}
@@ -55,21 +54,22 @@ export function DiseaseCard({ disease }: { disease: Disease }) {
         </div>
 
         {/* Performance Metrics */}
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          {/* Theme color for Performance heading */}
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-            Performance:
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
+            Performance Metrics
           </h4>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             {Object.entries(disease.performance).map(([key, value]) =>
               typeof value === "string" ? (
-                <li key={key} className="flex justify-between items-baseline">
-                  {/* Theme colors for performance labels */}
-                  <span className="capitalize text-gray-500 dark:text-gray-400">
-                    {key.replace(/([A-Z])/g, " $1")}:
+                <li key={key} className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {key
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (c) => c.toUpperCase())}
+                    :
                   </span>
-                  {/* Theme colors for performance values */}
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">
+                  <span className="font-medium text-gray-800 dark:text-gray-100">
                     {value}
                   </span>
                 </li>

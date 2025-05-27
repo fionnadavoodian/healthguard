@@ -43,37 +43,32 @@ export default function Navbar() {
   return (
     <nav className="bg-white/80 dark:bg-white/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 h-[var(--navbar-height)] flex items-center">
       <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        {/* Adjusted px and py for mobile */}
-        {/* Left Side: Logo and Brand Name */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <Link href="#home" className="flex items-center gap-2">
             <div className="w-9 h-9 bg-gradient-to-r from-indigo-600 to-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-lg">
               {" "}
-              {/* Reduced size */}
               HG
             </div>
             <span className="text-lg font-bold text-gray-800 dark:text-white">
               {" "}
-              {/* Reduced font size */}
               HealthGuard Pro
             </span>
           </Link>
         </div>
-        {/* Right Side: Icons and Mobile Toggle */}
+
         <div className="flex items-center gap-2 sm:gap-3">
           {" "}
-          {/* Adjusted gap */}
-          {/* Always visible theme toggle */}
           <DarkModeToggle />
-          {/* User Avatar (only when signed in, on desktop) */}
           {session && (
-            <Link href="/account" className="cursor-pointer hidden sm:block">
+            <Link
+              href="/account"
+              className="cursor-pointer hidden sm:block  text-gray-800 dark:text-white"
+            >
               <UserAvatar user={user} />
             </Link>
           )}
-          {/* Desktop Auth Buttons (hidden on mobile) */}
           {!session ? (
-            <div className="hidden sm:flex gap-2">
+            <div className="hidden sm:flex gap-2  text-gray-800 dark:text-white">
               {" "}
               {/* Reduced gap */}
               <Link
@@ -90,7 +85,6 @@ export default function Navbar() {
               </Link>
             </div>
           ) : (
-            // Sign Out Button for Desktop
             <LoadingButton
               loading={loading}
               onClick={handleSignOut}
@@ -100,7 +94,6 @@ export default function Navbar() {
               Sign Out
             </LoadingButton>
           )}
-          {/* Mobile Hamburger/Close Button */}
           <button
             className="sm:hidden p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" /* Reduced padding */
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -114,7 +107,7 @@ export default function Navbar() {
           </button>
         </div>
       </div>
-      {/* Mobile Menu Overlay (Off-canvas or dropdown menu) */}
+
       {isMobileMenuOpen && (
         <div className="sm:hidden absolute top-[var(--navbar-height)] left-0 w-full bg-white dark:bg-gray-900 shadow-lg py-4 px-6 z-40">
           <div className="flex flex-col space-y-3 text-base">
@@ -140,7 +133,6 @@ export default function Navbar() {
               Resources
             </a>
             {session ? (
-              // Sign Out Button for Mobile Menu
               <LoadingButton
                 loading={loading}
                 onClick={() => {

@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Custom colors that adapt to dark mode
+       
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {

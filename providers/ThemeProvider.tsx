@@ -1,4 +1,3 @@
-// providers/ThemeProvider.tsx (This is the version we've been working with, should be correct)
 "use client";
 
 import {
@@ -22,89 +21,73 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("system");
-  const [mounted, setMounted] = useState(false); // New mounted state
+  const [mounted, setMounted] = useState(false);
 
-  // Function to apply the theme class to the document element
-  const applyThemeClass = useCallback(
-    (selectedTheme: Theme) => {
-      if (!mounted) return; // Only apply if mounted on client
-      const root = document.documentElement;
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  // Apply the correct class on <html>
+  const applyThemeClass = useCallback((selectedTheme: Theme) => {
+    const root = document.documentElement;
+    const systemPrefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
 
-      root.classList.remove("light", "dark"); // Clean state
+    root.classList.remove("light", "dark");
 
-      if (selectedTheme === "system") {
-        const systemPrefersDark = mediaQuery.matches;
-        root.classList.add(systemPrefersDark ? "dark" : "light");
-      } else {
-        root.classList.add(selectedTheme);
-      }
-    },
-    [mounted]
-  ); // Depend on mounted
+    if (selectedTheme === "system") {
+      root.classList.add(systemPrefersDark ? "dark" : "light");
+    } else {
+      root.classList.add(selectedTheme);
+    }
+  }, []);
 
-  // Effect to set mounted state and load initial theme once on client mount
+  // Load initial theme from localStorage or system, then apply it
   useEffect(() => {
-    setMounted(true); // Component has mounted
-
     const savedTheme = localStorage.getItem("theme") as Theme | null;
     const initialTheme = savedTheme || "system";
-
     setThemeState(initialTheme);
+    setMounted(true);
+  }, []);
 
-    // Listener for system theme changes
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleSystemThemeChange = () => {
-      if (theme === "system") {
-        // Only react to system changes if current theme is 'system'
-        applyThemeClass("system");
-      }
-    };
-    mediaQuery.addEventListener("change", handleSystemThemeChange);
-
-    return () =>
-      mediaQuery.removeEventListener("change", handleSystemThemeChange);
-  }, [theme, applyThemeClass]);
-
-  // Effect to apply theme class whenever the 'theme' state changes
-  // This will also run once after initial mount due to setThemeState in previous effect
+  // Re-apply theme class whenever theme changes *and* after mounted
   useEffect(() => {
     if (mounted) {
-      // Ensure this only runs client-side after mount
       applyThemeClass(theme);
+      if (theme === "system") {
+        // Listen to system changes only if theme === system
+        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        const handleChange = () => applyThemeClass("system");
+        mediaQuery.addEventListener("change", handleChange);
+        return () => mediaQuery.removeEventListener("change", handleChange);
+      }
     }
   }, [theme, mounted, applyThemeClass]);
 
-  // Public setTheme function - updates state and localStorage
+  // setTheme function updates localStorage and state
   const setTheme = useCallback((newTheme: Theme) => {
-    setThemeState(newTheme);
     if (newTheme === "system") {
       localStorage.removeItem("theme");
     } else {
       localStorage.setItem("theme", newTheme);
     }
+    setThemeState(newTheme);
   }, []);
 
-  // Public toggleTheme function
+  // toggleTheme cycles through light -> dark -> system -> light
   const toggleTheme = useCallback(() => {
     setThemeState((prevTheme) => {
       let nextTheme: Theme;
-      if (prevTheme === "light") {
-        nextTheme = "dark";
-      } else if (prevTheme === "dark") {
-        nextTheme = "system";
-      } else {
-        // current theme is 'system'
-        nextTheme = "light";
-      }
-      setTheme(nextTheme);
+      if (prevTheme === "light") nextTheme = "dark";
+      else if (prevTheme === "dark") nextTheme = "system";
+      else nextTheme = "light";
+
+      if (nextTheme === "system") localStorage.removeItem("theme");
+      else localStorage.setItem("theme", nextTheme);
+
       return nextTheme;
     });
-  }, [setTheme]);
+  }, []);
 
-  // Render children only after component has mounted to prevent hydration errors from theme
   if (!mounted) {
-    return null;
+    return null; // prevent hydration mismatch
   }
 
   return (

@@ -3,6 +3,7 @@
 
 import React from "react";
 import { DiseaseCard } from "@/components/DiseaseCard";
+import { useRouter } from "next/navigation";
 import diseaseData from "../app/data/diseases.json";
 import authorData from "../app/data/authors.json";
 import { Button } from "@/components/Button";
@@ -14,6 +15,8 @@ export default function Home() {
     diabetesResearchAuthors,
     heartDiseaseResearchAuthors,
   } = authorData;
+
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800">
@@ -33,6 +36,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button
+                onClick={() => router.push("/register")}
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:scale-105 transition-transform"
                 size="xl"
               >

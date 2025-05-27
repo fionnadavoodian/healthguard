@@ -1,10 +1,9 @@
-// app/layout.tsx
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { SupabaseAuthProvider } from "@/providers/SupabaseAuthProvider";
 
-import "./globals.css"; // Ensure globals.css is correctly imported
+import "./globals.css";
 import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar"; // Ensure Navbar is imported for the global layout
+import Navbar from "@/components/Navbar";
 
 export default function RootLayout({
   children,
@@ -17,7 +16,7 @@ export default function RootLayout({
         <ThemeProvider>
           <SupabaseAuthProvider>
             <Navbar />
-            <main className="flex flex-col min-h-[calc(100vh-var(--navbar-height))]">
+            <main className="flex flex-col min-h-[calc(100vh-var(--navbar-height))] bg-gradient-to-br from-indigo-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800 transition-colors duration-500">
               {children}
               <section
                 id="footer"

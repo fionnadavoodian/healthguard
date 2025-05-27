@@ -11,6 +11,7 @@ import { useSupabaseAuth } from "@/providers/SupabaseAuthProvider";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 import { Database } from "@/types/supabase";
+
 type ProfilesTable = Database["public"]["Tables"]["profiles"]["Row"];
 
 interface FormData {
@@ -24,11 +25,10 @@ interface FormData {
   blood_glucose_level: number;
 }
 
-// Updated interface to match backend's 'probability_of_diabetes'
 interface PredictionResult {
   prediction: number;
-  probability_of_diabetes: number; // Changed to match backend
-  category: string; // This needs to be generated on the backend or derived on the frontend
+  probability_of_diabetes: number;
+  category: string;
   message?: string;
 }
 
@@ -50,7 +50,7 @@ export default function DiabetesAssessmentPage() {
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [predictionResult, setPredictionResult] =
-    useState<PredictionResult | null>(null); // Use the updated interface
+    useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -70,9 +70,7 @@ export default function DiabetesAssessmentPage() {
           } else if (data) {
             const profileData: Partial<FormData> = {};
 
-            if (data.gender) {
-              profileData.gender = data.gender;
-            }
+            if (data.gender) profileData.gender = data.gender;
 
             if (data.date_of_birth) {
               const birthDate = new Date(data.date_of_birth);
@@ -85,9 +83,7 @@ export default function DiabetesAssessmentPage() {
               profileData.age = age;
             }
 
-            if (data.bmi) {
-              profileData.bmi = data.bmi;
-            }
+            if (data.bmi) profileData.bmi = data.bmi;
 
             setFormData((prev) => ({
               ...prev,
@@ -131,9 +127,8 @@ export default function DiabetesAssessmentPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setPredictionResult(null); // Reset previous results
+    setPredictionResult(null);
 
-    // FormData validation (as you have it)
     const requiredFields: (keyof FormData)[] = [
       "gender",
       "age",
@@ -157,10 +152,8 @@ export default function DiabetesAssessmentPage() {
       }
     }
 
-    console.log("Frontend: Sending form data:", formData);
-
     try {
-      const response = await fetch("/api/predict", {
+      const response = await fetch("http://localhost:8000/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -168,45 +161,17 @@ export default function DiabetesAssessmentPage() {
         body: JSON.stringify(formData),
       });
 
-      console.log("Frontend: Raw response object from API:", response);
-
-      const responseText = await response.text();
-      console.log("Frontend: Raw response text from API:", responseText);
-
-      let data: PredictionResult; // Assert type for data
-      try {
-        data = JSON.parse(responseText);
-        console.log("Frontend: Data parsed from API response:", data);
-      } catch (parseError) {
-        console.error(
-          "Frontend: Failed to parse API response as JSON:",
-          parseError
-        );
-        console.error("Frontend: API response text was:", responseText);
-        setError(
-          `Received an invalid response format from the server. Status: ${response.status}`
-        );
-        setLoading(false);
-        return;
-      }
+      const data: PredictionResult = await response.json();
 
       if (!response.ok) {
-        console.error(
-          "Frontend: API response NOT OK. Status:",
-          response.status,
-          "Data:",
-          data
-        );
         setError(
-          (data as any)?.error || // Cast to 'any' to access error property safely if it exists
+          (data as any)?.error ||
             `An unexpected error occurred during prediction (Status: ${response.status})`
         );
         setLoading(false);
         return;
       }
 
-      // **Crucial Change:** Map backend keys to frontend expectations
-      // Also, derive 'category' if your backend doesn't send it directly
       if (
         data &&
         data.prediction !== undefined &&
@@ -214,28 +179,21 @@ export default function DiabetesAssessmentPage() {
       ) {
         const prediction = data.prediction;
         const probability = data.probability_of_diabetes;
-        let category = "Low Risk"; // Default
+        let category = "Low Risk";
 
         if (prediction === 1) {
-          // Assuming prediction 1 means diabetes
           category = "High Risk";
         } else if (probability >= 0.5) {
-          // Example threshold for medium risk if prediction is 0
           category = "Medium Risk";
         }
-        // You might want to refine these category thresholds based on your model's output interpretation
 
         setPredictionResult({
-          prediction: prediction,
-          probability_of_diabetes: probability, // Keep this name for display
-          category: category,
-          message: data.message, // Include if your backend provides it
+          prediction,
+          probability_of_diabetes: probability,
+          category,
+          message: data.message,
         });
       } else {
-        console.error(
-          "Frontend: API response OK, but data is missing expected fields (prediction, probability_of_diabetes):",
-          data
-        );
         setError("Prediction data from the server is incomplete.");
       }
     } catch (err: any) {
@@ -255,7 +213,6 @@ export default function DiabetesAssessmentPage() {
         <p className="text-lg text-gray-700 dark:text-gray-300">
           Loading profile data...
         </p>
-        {/* You can add a spinner here if you have one */}
       </div>
     );
   }
@@ -280,9 +237,6 @@ export default function DiabetesAssessmentPage() {
             onSubmit={handleSubmit}
             className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
           >
-            {" "}
-            {/* Adjusted gap-x and gap-y */}
-            {/* Gender */}
             <div>
               <label
                 htmlFor="gender"
@@ -309,7 +263,7 @@ export default function DiabetesAssessmentPage() {
                 <option value="Other">Other</option>
               </select>
             </div>
-            {/* Age */}
+
             <Input
               label="Age"
               type="number"
@@ -325,7 +279,7 @@ export default function DiabetesAssessmentPage() {
                   : ""
               }`}
             />
-            {/* Hypertension */}
+
             <div>
               <label
                 htmlFor="hypertension"
@@ -346,7 +300,7 @@ export default function DiabetesAssessmentPage() {
                 <option value={1}>Yes</option>
               </select>
             </div>
-            {/* Heart Disease */}
+
             <div>
               <label
                 htmlFor="heart_disease"
@@ -367,7 +321,7 @@ export default function DiabetesAssessmentPage() {
                 <option value={1}>Yes</option>
               </select>
             </div>
-            {/* Smoking History */}
+
             <div className="md:col-span-2">
               <label
                 htmlFor="smoking_history"
@@ -398,7 +352,7 @@ export default function DiabetesAssessmentPage() {
                 </option>
               </select>
             </div>
-            {/* BMI */}
+
             <Input
               label="BMI"
               type="number"
@@ -415,7 +369,7 @@ export default function DiabetesAssessmentPage() {
                   : ""
               }`}
             />
-            {/* HbA1c Level */}
+
             <Input
               label="HbA1c Level (%)"
               type="number"
@@ -427,7 +381,7 @@ export default function DiabetesAssessmentPage() {
               required
               className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
             />
-            {/* Blood Glucose Level */}
+
             <Input
               label="Blood Glucose Level (mg/dL)"
               type="number"
@@ -438,11 +392,13 @@ export default function DiabetesAssessmentPage() {
               required
               className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
             />
+
             {error && (
               <p className="text-red-500 text-sm text-center col-span-full">
                 {error}
               </p>
             )}
+
             <LoadingButton
               type="submit"
               loading={loading}
@@ -470,8 +426,7 @@ export default function DiabetesAssessmentPage() {
               <p>
                 Risk Score:{" "}
                 {predictionResult.probability_of_diabetes.toFixed(4)}
-              </p>{" "}
-              {/* Display the corrected key */}
+              </p>
               <p className="text-sm mt-2">
                 This prediction is based on the provided data and our model's
                 assessment. Please consult a healthcare professional for
