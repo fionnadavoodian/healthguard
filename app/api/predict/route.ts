@@ -4,12 +4,53 @@ import { NextRequest, NextResponse } from "next/server";
 
 console.log("Node.js Version in route.ts:", process.version);
 
-export async function POST(req: NextRequest) { 
+export async function POST(req: NextRequest) {
   try {
-   
     const data = await req.json();
-
     console.log("Route.ts: Received data from frontend:", data);
+
+  
+    const isGastricAssessment =
+      data.hpylori !== undefined &&
+      data.family_history !== undefined &&
+      data.education !== undefined &&
+      data.pack_years_smoking !== undefined;
+
+    if (isGastricAssessment) {
+      // 🧪 Handle Gastric Cancer Assessment
+      const gastricResponse = await fetch("http://localhost:8000/gastric-risk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const text = await gastricResponse.text();
+      console.log("Route.ts: Gastric response raw text:", text);
+
+      if (!gastricResponse.ok) {
+        console.error("Backend error (gastric):", text);
+        return NextResponse.json(
+          { error: "FastAPI gastric-risk error", detail: text },
+          { status: 500 }
+        );
+      }
+
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch (err) {
+        console.error("Failed to parse JSON (gastric):", err);
+        return NextResponse.json(
+          { error: "Invalid JSON from FastAPI", text },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        ...result,
+        message: "Gastric cancer risk assessment successful.",
+      });
+    }
 
     const response = await fetch("/api/predict", {
   method: "POST",

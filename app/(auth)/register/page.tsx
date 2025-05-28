@@ -1,4 +1,5 @@
 "use client";
+
 import { motion } from "framer-motion";
 import AuthForm from "@/components/auth/AuthForm";
 import Link from "next/link";
@@ -13,14 +14,12 @@ export default function RegisterPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (user !== undefined && session !== undefined) {
-      if (user) {
-        router.replace("/account");
-      }
+    if (user && session) {
+      router.replace("/account");
     }
   }, [user, session, router]);
 
-  if (user !== undefined && session !== undefined && user) {
+  if (user && session) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-lg text-gray-600 dark:text-gray-300">
@@ -34,7 +33,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 p-4 relative">
       <Link
         href="/"
-        className="absolute top-4 left-4 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors flex items-center text-sm font-medium"
+        className="absolute top-4 left-4 text-sm flex items-center text-gray-600 dark:text-gray-300 hover:text-white"
       >
         <ArrowLeftIcon className="w-4 h-4 mr-1" />
         Return
@@ -48,7 +47,6 @@ export default function RegisterPage() {
       >
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
           <div className="h-2 bg-gradient-to-r from-green-400 to-blue-500"></div>
-
           <div className="p-8">
             <div className="flex flex-col items-center mb-8">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center shadow-md mb-4">
@@ -69,7 +67,7 @@ export default function RegisterPage() {
                 Already have an account?{" "}
                 <Link
                   href="/login"
-                  className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                  className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   Sign in
                 </Link>
@@ -88,6 +86,7 @@ export default function RegisterPage() {
             <Link href="/privacy" className="hover:underline">
               Privacy Policy
             </Link>
+            .
           </p>
         </div>
       </motion.div>

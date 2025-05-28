@@ -8,11 +8,13 @@ from sklearn.metrics import accuracy_score, classification_report
 import joblib
 import os
 
+
 def train_and_save_model(data_path='diabetes_prediction_dataset.csv', model_dir='model'):
     try:
         df = pd.read_csv(data_path)
     except FileNotFoundError:
-        print(f"Error: Dataset not found at {data_path}. Please ensure the CSV file is in the correct directory.")
+        print(
+            f"Error: Dataset not found at {data_path}. Please ensure the CSV file is in the correct directory.")
         return
 
     # Define features (X) and target (y)
@@ -20,7 +22,8 @@ def train_and_save_model(data_path='diabetes_prediction_dataset.csv', model_dir=
     y = df['diabetes']
 
     categorical_features = ['gender', 'smoking_history']
-    numerical_features = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level', 'hypertension', 'heart_disease']
+    numerical_features = ['age', 'bmi', 'HbA1c_level',
+                          'blood_glucose_level', 'hypertension', 'heart_disease']
 
     numerical_transformer = StandardScaler()
     categorical_transformer = OneHotEncoder(handle_unknown='ignore')
@@ -38,7 +41,8 @@ def train_and_save_model(data_path='diabetes_prediction_dataset.csv', model_dir=
         ('classifier', LogisticRegression(random_state=42, solver='liblinear'))
     ])
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y)
 
     print("Training model pipeline...")
     model_pipeline.fit(X_train, y_train)
@@ -56,6 +60,7 @@ def train_and_save_model(data_path='diabetes_prediction_dataset.csv', model_dir=
     pipeline_path = os.path.join(model_dir, 'pipeline.pkl')
     joblib.dump(model_pipeline, pipeline_path)
     print(f"Pipeline saved to {pipeline_path}")
+
 
 if __name__ == "__main__":
     train_and_save_model()

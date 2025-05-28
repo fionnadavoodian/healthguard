@@ -1,3 +1,4 @@
+///Users/fionnadavoodian/healthguard/providers/SupabaseAuthProvider.tsx
 "use client";
 
 import {
@@ -9,7 +10,7 @@ import {
 } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import type { Session } from "@supabase/supabase-js";
-import { Database } from "@/types/supabase"; // Assuming you have your types generated
+import { Database } from "@/types/supabase";
 import { useRouter } from "next/navigation";
 
 type SupabaseContextType = {

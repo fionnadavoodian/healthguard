@@ -153,7 +153,7 @@ export default function DiabetesAssessmentPage() {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/predict", {
+      const response = await fetch("http://localhost:8000/diabetes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -250,7 +250,6 @@ export default function DiabetesAssessmentPage() {
                 value={formData.gender}
                 onChange={handleChange}
                 required
-                disabled={!!formData.gender}
                 className={`mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${
                   !!formData.gender
                     ? "bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
@@ -272,7 +271,6 @@ export default function DiabetesAssessmentPage() {
               onChange={handleChange}
               placeholder="e.g., 35"
               required
-              readOnly={!!formData.age}
               className={`dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${
                 !!formData.age
                   ? "bg-gray-100 dark:bg-gray-800 cursor-not-allowed"

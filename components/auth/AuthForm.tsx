@@ -1,9 +1,7 @@
-// components/auth/AuthForm.tsx
 "use client";
 
-import { useForm, FieldErrors } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import Input from "@/components/Input";
 import { Button } from "@/components/Button";
 import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
@@ -22,71 +20,76 @@ const registerSchema = z
     name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email address"),
     password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z
-      .string()
-      .min(6, "Confirm password must be at least 6 characters"),
+    confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
   });
 
-type LoginFormData = z.infer<typeof loginSchema>;
-type RegisterFormData = z.infer<typeof registerSchema>;
-
-interface AuthFormProps {
+type AuthFormProps = {
   type: "login" | "register";
-}
+};
+
+type FormData = {
+  name?: string;
+  email: string;
+  password: string;
+  confirmPassword?: string;
+};
 
 export default function AuthForm({ type }: AuthFormProps) {
   const router = useRouter();
   const { supabase } = useSupabaseAuth();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<LoginFormData | RegisterFormData>({
-    resolver: zodResolver(type === "login" ? loginSchema : registerSchema),
-  });
+  const { register, handleSubmit, watch } = useForm<FormData>();
 
   const password = watch("password");
 
-  const registerErrors = errors as FieldErrors<RegisterFormData>;
-
-  const onSubmit = async (data: LoginFormData | RegisterFormData) => {
+  const onSubmit = async (data: FormData) => {
+    setErrors({});
     setLoading(true);
+
     try {
+      const schema = type === "login" ? loginSchema : registerSchema;
+      schema.parse(data); // validate manually
+
       if (type === "login") {
         const { error } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password,
         });
+
         if (error) throw error;
         toast.success("Logged in successfully!");
         router.push("/account");
       } else {
-        const registerData = data as RegisterFormData;
         const { error } = await supabase.auth.signUp({
-          email: registerData.email,
-          password: registerData.password,
+          email: data.email,
+          password: data.password,
           options: {
-            data: {
-              name: registerData.name,
-            },
+            data: { name: data.name },
           },
         });
+
         if (error) throw error;
-        toast.success(
-          "Registration successful! Please check your email for confirmation."
-        );
+        toast.success("Registration successful! Check your email.");
         router.push("/login");
       }
-    } catch (error: any) {
-      toast.error(error.message || "An unexpected error occurred.");
-      console.error("Auth error:", error);
+    } catch (err: any) {
+      if (err?.errors) {
+        // Zod validation errors
+        const newErrors: Record<string, string> = {};
+        for (const issue of err.errors) {
+          newErrors[issue.path[0]] = issue.message;
+        }
+        setErrors(newErrors);
+      } else {
+        toast.error(err.message || "Unexpected error");
+        console.error("Auth error:", err);
+      }
     } finally {
       setLoading(false);
     }
@@ -100,7 +103,7 @@ export default function AuthForm({ type }: AuthFormProps) {
           id="name"
           type="text"
           {...register("name")}
-          error={registerErrors.name?.message}
+          error={errors.name}
           disabled={loading}
         />
       )}
@@ -109,7 +112,7 @@ export default function AuthForm({ type }: AuthFormProps) {
         id="email"
         type="email"
         {...register("email")}
-        error={errors.email?.message}
+        error={errors.email}
         disabled={loading}
       />
       <Input
@@ -117,7 +120,7 @@ export default function AuthForm({ type }: AuthFormProps) {
         id="password"
         type="password"
         {...register("password")}
-        error={errors.password?.message}
+        error={errors.password}
         disabled={loading}
       />
       {type === "register" && password && (
@@ -129,7 +132,7 @@ export default function AuthForm({ type }: AuthFormProps) {
           id="confirmPassword"
           type="password"
           {...register("confirmPassword")}
-          error={registerErrors.confirmPassword?.message}
+          error={errors.confirmPassword}
           disabled={loading}
         />
       )}
