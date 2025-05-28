@@ -60,7 +60,7 @@ export default function DiabetesAssessmentPage() {
         try {
           const { data, error } = await supabase
             .from("profiles")
-            .select("gender, date_of_birth, bmi")
+            .select("gender, date_of_birth, bmi, weight, height")
             .eq("id", user.id)
             .single();
 
@@ -83,7 +83,19 @@ export default function DiabetesAssessmentPage() {
               profileData.age = age;
             }
 
-            if (data.bmi) profileData.bmi = data.bmi;
+            if (data.bmi !== null && data.bmi !== undefined) {
+              profileData.bmi = data.bmi;
+            } else if (
+              data.weight !== null &&
+              data.weight !== undefined &&
+              data.height !== null &&
+              data.height !== undefined
+            ) {
+              const heightMeters =
+                data.height > 10 ? data.height / 100 : data.height;
+              const calculatedBMI = data.weight / (heightMeters * heightMeters);
+              profileData.bmi = parseFloat(calculatedBMI.toFixed(2)); // round to 2 decimals
+            }
 
             setFormData((prev) => ({
               ...prev,
@@ -153,7 +165,7 @@ export default function DiabetesAssessmentPage() {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/diabetes", {
+      const response = await fetch("http://localhost:8000/diabetes-risk", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

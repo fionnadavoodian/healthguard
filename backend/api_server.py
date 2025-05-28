@@ -43,7 +43,7 @@ def health_check():
     return {"status": "ok", "message": "API server is running."}
 
 
-@app.post("/diabetes")
+@app.post("/diabetes-risk")
 def predict_diabetes(data: DiabetesData):
     input_df = pd.DataFrame([{
         "gender": data.gender,
@@ -179,7 +179,7 @@ class GastricCancerData(BaseModel):
     high_nitrate: bool
 
 
-@app.post("/gastric-risk")
+@app.post("/gastric-cancer")
 def assess_gastric_risk(data: GastricCancerData):
     try:
         score = gastric_cancer_risk_score(data)

@@ -44,7 +44,10 @@ export default function Navbar() {
     <nav className="bg-white/80 dark:bg-white/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 h-[var(--navbar-height)] flex items-center">
       <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Link href="#home" className="flex items-center gap-2">
+          <Link
+            href="http://localhost:3000"
+            className="flex items-center gap-2"
+          >
             <div className="w-9 h-9 bg-gradient-to-r from-indigo-600 to-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-lg">
               {" "}
               HG

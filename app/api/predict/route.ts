@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     if (isGastricAssessment) {
       // 🧪 Handle Gastric Cancer Assessment
-      const gastricResponse = await fetch("http://localhost:8000/gastric-risk", {
+      const gastricResponse = await fetch("http://localhost:8000/gastric-cancer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       if (!gastricResponse.ok) {
         console.error("Backend error (gastric):", text);
         return NextResponse.json(
-          { error: "FastAPI gastric-risk error", detail: text },
+          { error: "FastAPI gastric-cancer error", detail: text },
           { status: 500 }
         );
       }
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const response = await fetch("/api/predict", {
+    const response = await fetch("/api/diabetes-risk", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

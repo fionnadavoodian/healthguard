@@ -262,51 +262,64 @@ export default function DashboardPanel({ user }: DashboardPanelProps) {
           )}
         </motion.div>
 
-        <motion.div
-          // Removed whileHover={{ scale: 1.01 }} to stop bouncing
-          className="lg:col-span-1 bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-4 rounded-2xl shadow-xl border border-blue-400 dark:border-indigo-700 flex flex-col items-center justify-center min-h-0"
-        >
-          <div
-            className="absolute inset-0 opacity-10 -z-10" // Added -z-10 here
-          ></div>
-          <h2 className="text-lg font-semibold mb-3 text-white z-10">
+        <motion.div className="relative lg:col-span-1 bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-2xl shadow-2xl border border-blue-400 dark:border-indigo-700 flex flex-col items-center justify-center min-h-0 overflow-hidden">
+          {/* Subtle background shimmer overlay */}
+          <div className="absolute inset-0  rounded-2xl pointer-events-none"></div>
+
+          <h2 className="text-xl font-semibold mb-4 z-10">
             Assessment Progress
           </h2>
-          <ResponsiveContainer width="80%" height={100}>
-            <PieChart>
-              <Pie
-                data={progressChartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={35}
-                outerRadius={55}
-                paddingAngle={1}
-                dataKey="value"
-                startAngle={90}
-                endAngle={-270}
-                labelLine={false}
-              >
-                {progressChartData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={PIE_COLORS[index % PIE_COLORS.length]}
-                    stroke="none"
-                  />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: number) => `${value.toFixed(0)}%`} />
-              <text
-                x="50%"
-                y="50%"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                className="text-2xl font-bold fill-white"
-              >
-                {completionPercentage.toFixed(0)}%
-              </text>
-            </PieChart>
-          </ResponsiveContainer>
-          <p className="text-sm font-medium text-white mt-1 z-10">
+
+          <div
+            className="relative w-full flex items-center justify-center"
+            style={{ height: 120 }}
+          >
+            <ResponsiveContainer width="80%" height={120}>
+              <PieChart>
+                <Pie
+                  data={progressChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={60}
+                  paddingAngle={2}
+                  dataKey="value"
+                  startAngle={90}
+                  endAngle={-270}
+                  labelLine={false}
+                  isAnimationActive={true}
+                >
+                  {progressChartData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={PIE_COLORS[index % PIE_COLORS.length]}
+                      stroke="none"
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    color: "#333",
+                    borderRadius: "6px",
+                    fontSize: "0.875rem",
+                  }}
+                  formatter={(value: number) => `${value.toFixed(0)}%`}
+                />
+                <text
+                  x="50%"
+                  y="50%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="fill-white text-2xl font-extrabold"
+                >
+                  {completionPercentage.toFixed(0)}%
+                </text>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <p className="text-sm font-medium light:text-gray-400 mt-2 z-10">
             {completedAssessmentsCount} of {totalAssessments} Assessments
             Completed
           </p>

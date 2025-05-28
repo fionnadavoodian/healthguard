@@ -1,18 +1,11 @@
+// app/assessments/gastric-cancer/page.tsx
 "use client";
-import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
 import Input from "@/components/Input";
-import LoadingButton from "@/components/LoadingButton";
-import { useSupabaseAuth } from "@/providers/SupabaseAuthProvider";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-
-import { Database } from "@/types/supabase";
-
-type ProfilesTable = Database["public"]["Tables"]["profiles"]["Row"];
 
 interface GastricCancerFormData {
   hpylori: boolean | "";
@@ -35,165 +28,88 @@ const selectClasses =
   "mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400";
 
 export default function GastricCancerForm() {
-  const router = useRouter();
-  const { user } = useSupabaseAuth();
-  const supabase = createClientComponentClient<Database>();
-
-  // Initialize form with react-hook-form, defaultValues as empty
-  const {
-    register,
-    handleSubmit,
-    watch,
-    reset, // to reset form values when profile loads
-    formState: { errors },
-  } = useForm<GastricCancerFormData>({
-    defaultValues: {
-      hpylori: false,
-      atrophic_gastritis: false,
-      peptic_ulcer: false,
-      gastric_surgery: false,
-      pernicious_anemia: false,
-      family_history: "",
-      age: "",
-      gender: "",
-      education: "",
-      smoking: false,
-      pack_years_smoking: "",
-      low_veg_fruit: false,
-      high_salt_intake: false,
-      high_nitrate: false,
-    },
-  });
-
-  const smoking = watch("smoking");
-
+  const { register, handleSubmit, watch } = useForm<GastricCancerFormData>();
   const [result, setResult] = useState<{
     score_percentage: number;
     risk_category: string;
   } | null>(null);
-
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) {
-        setProfileLoading(false);
-        return;
-      }
-      setProfileLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("gender, date_of_birth")
-          .eq("id", user.id)
-          .single();
-
-        if (error) {
-          console.error("Error fetching profile:", error);
-          setError("Failed to load profile data.");
-        } else if (data) {
-          let age = "";
-          if (data.date_of_birth) {
-            const birthDate = new Date(data.date_of_birth);
-            const today = new Date();
-            let calculatedAge = today.getFullYear() - birthDate.getFullYear();
-            const m = today.getMonth() - birthDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-              calculatedAge--;
-            }
-            age = calculatedAge.toString();
-          }
-
-          // Reset form with fetched data to prefill fields
-          reset({
-            age: age ? Number(age) : "",
-            gender:
-              data.gender &&
-              (data.gender.toLowerCase() === "male" ||
-                data.gender.toLowerCase() === "female")
-                ? (data.gender.toLowerCase() as "male" | "female")
-                : "",
-            hpylori: false,
-            atrophic_gastritis: false,
-            peptic_ulcer: false,
-            gastric_surgery: false,
-            pernicious_anemia: false,
-            family_history: "",
-            education: "",
-            smoking: false,
-            pack_years_smoking: "",
-            low_veg_fruit: false,
-            high_salt_intake: false,
-            high_nitrate: false,
-          });
-        }
-      } catch (err) {
-        console.error("Unexpected error fetching profile:", err);
-        setError("An unexpected error occurred while loading profile.");
-      } finally {
-        setProfileLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [user, supabase, reset]);
+  const smoking = watch("smoking");
 
   const onSubmit = async (data: GastricCancerFormData) => {
     setLoading(true);
     setError(null);
     setResult(null);
 
+    // Normalize smoking fields before submission
     const cleanedData = {
       ...data,
       pack_years_smoking: data.smoking ? data.pack_years_smoking : "never",
     };
 
     try {
-      const res = await fetch("http://localhost:8000/gastric-cancer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleanedData),
-      });
+      // Step 1: Get prediction from your FastAPI backend
+      const predictionRes = await fetch(
+        "http://localhost:8000/gastric-cancer",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cleanedData),
+        }
+      );
 
-      const json = await res.json();
+      const predictionJson = await predictionRes.json();
 
-      if (!res.ok) {
+      if (!predictionRes.ok) {
         let errorMessage = "An unexpected error occurred during prediction.";
-
-        if (Array.isArray(json.detail)) {
-          errorMessage = json.detail
+        if (Array.isArray(predictionJson.detail)) {
+          errorMessage = predictionJson.detail
             .map((e: any) => `${e.loc?.join(".")}: ${e.msg}`)
             .join("\n");
-        } else if (typeof json.detail === "string") {
-          errorMessage = json.detail;
-        } else if (json.message) {
-          errorMessage = json.message;
+        } else if (typeof predictionJson.detail === "string") {
+          errorMessage = predictionJson.detail;
+        } else if (predictionJson.message) {
+          errorMessage = predictionJson.message;
         }
-
         setError(errorMessage);
         return;
       }
 
-      setResult(json);
+      setResult(predictionJson);
+
+      // Step 2: Save form data + prediction result to your database via Next.js API route
+      const saveRes = await fetch("/api/save-gastric-assessment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...cleanedData,
+          prediction_score: predictionJson.score_percentage,
+          prediction_category: predictionJson.risk_category,
+        }),
+      });
+
+      const saveJson = await saveRes.json();
+
+      if (!saveRes.ok) {
+        console.error("Error saving assessment to DB:", saveJson.error);
+        // You might want to display a different error or just log this,
+        // as the prediction was successful
+        setError(
+          (prev) =>
+            (prev ? prev + "\n" : "") + "Failed to save assessment to database."
+        );
+      } else {
+        console.log("Assessment saved successfully:", saveJson.data);
+      }
     } catch (err) {
-      console.error("Error submitting gastric cancer data", err);
+      console.error("Error during assessment submission or saving", err);
       setError("Network error or server unavailable. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
-  if (profileLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-lg text-gray-700 dark:text-gray-300">
-          Loading profile data...
-        </p>
-      </div>
-    );
-  }
 
   return (
     <motion.div
@@ -223,9 +139,6 @@ export default function GastricCancerForm() {
               disabled={loading}
               className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
             />
-            {errors.age && (
-              <p className="text-red-500 text-sm">Age is required.</p>
-            )}
 
             <div>
               <label
@@ -244,9 +157,6 @@ export default function GastricCancerForm() {
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
-              {errors.gender && (
-                <p className="text-red-500 text-sm">Gender is required.</p>
-              )}
             </div>
 
             <div className="md:col-span-2">
@@ -268,35 +178,6 @@ export default function GastricCancerForm() {
                 <option value="secondary">Secondary</option>
                 <option value="high educational">High Educational</option>
               </select>
-              {errors.education && (
-                <p className="text-red-500 text-sm">
-                  Education level is required.
-                </p>
-              )}
-            </div>
-            <div className="md:col-span-2">
-              <label
-                htmlFor="family_history"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Family History
-              </label>
-              <select
-                id="family_history"
-                {...register("family_history", { required: true })}
-                disabled={loading}
-                className={selectClasses}
-              >
-                <option value="">Select Family History</option>
-                <option value="non-relative">Non-relative</option>
-                <option value="second-degree">Second-degree</option>
-                <option value="first-degree">First-degree</option>
-              </select>
-              {errors.family_history && (
-                <p className="text-red-500 text-sm">
-                  Family history is required.
-                </p>
-              )}
             </div>
 
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mt-4 md:col-span-2">
@@ -365,90 +246,76 @@ export default function GastricCancerForm() {
                     <option value="">Select Smoking Status</option>
                     <option value="never">Never</option>
                     <option value="ex-smoker">Ex-smoker</option>
-                    <option value="current smoker">Current smoker</option>
+                    <option value="current smoker">Current Smoker</option>
                   </select>
-                  {errors.pack_years_smoking && (
-                    <p className="text-red-500 text-sm">
-                      Please specify smoking history.
-                    </p>
-                  )}
                 </div>
               )}
 
-              <div className="flex items-center space-x-2">
-                <input
-                  id="low_veg_fruit"
-                  type="checkbox"
-                  {...register("low_veg_fruit")}
-                  disabled={loading}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
-                />
-                <label
-                  htmlFor="low_veg_fruit"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Low Vegetable/Fruit Intake
-                </label>
-              </div>
+              {["low_veg_fruit", "high_salt_intake", "high_nitrate"].map(
+                (field) => (
+                  <div key={field} className="flex items-center space-x-2">
+                    <input
+                      id={field}
+                      type="checkbox"
+                      {...register(field as keyof GastricCancerFormData)}
+                      disabled={loading}
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
+                    />
+                    <label
+                      htmlFor={field}
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize"
+                    >
+                      {field.replaceAll("_", " ")}
+                    </label>
+                  </div>
+                )
+              )}
+            </div>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  id="high_salt_intake"
-                  type="checkbox"
-                  {...register("high_salt_intake")}
-                  disabled={loading}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
-                />
-                <label
-                  htmlFor="high_salt_intake"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  High Salt Intake
-                </label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  id="high_nitrate"
-                  type="checkbox"
-                  {...register("high_nitrate")}
-                  disabled={loading}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
-                />
-                <label
-                  htmlFor="high_nitrate"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  High Nitrate Intake
-                </label>
-              </div>
+            <div className="md:col-span-2">
+              <label
+                htmlFor="family_history"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Family History of Gastric Cancer
+              </label>
+              <select
+                id="family_history"
+                {...register("family_history", { required: true })}
+                disabled={loading}
+                className={selectClasses}
+              >
+                <option value="">Select Family History</option>
+                <option value="non-relative">No close relatives</option>
+                <option value="second-degree">Second-degree relative</option>
+                <option value="first-degree">First-degree relative</option>
+              </select>
             </div>
 
             {error && (
-              <div className="mt-4 text-center text-red-600 whitespace-pre-wrap">
+              <p className="text-red-500 text-sm text-center col-span-full whitespace-pre-line">
                 {error}
-              </div>
+              </p>
             )}
 
-            <div className="md:col-span-2 flex justify-center">
-              <LoadingButton
-                loading={loading}
-                type="submit"
-                className="w-full h-12 col-span-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-              >
-                Get Assessment
-              </LoadingButton>
-            </div>
+            <Button
+              type="submit"
+              isLoading={loading}
+              className="w-full h-12 col-span-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            >
+              Get Assessment
+            </Button>
           </form>
+
           {result && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
               className={`mt-6 p-4 rounded-lg text-center ${
-                result.risk_category.toLowerCase() === "high risk"
+                result.risk_category === "High Risk"
                   ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                  : result.risk_category.toLowerCase() === "medium risk"
+                  : result.risk_category === "Medium Risk"
                     ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
                     : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
               }`}

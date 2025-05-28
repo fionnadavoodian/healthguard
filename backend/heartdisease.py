@@ -1,22 +1,29 @@
 # heartdisease.py
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 import xgboost as xgb
 import joblib
+import os
 
 
 def load_data():
-    url = 'https://raw.githubusercontent.com/anishsingh20/Heart-Disease-UCI-Dataset/master/heart.csv'
-    df = pd.read_csv(url)
+    df = pd.read_csv("cardio_train.csv", sep=';')
+
+    # Drop ID column if present
+    if 'id' in df.columns:
+        df.drop(columns=['id'], inplace=True)
+
+    # Convert age from days to years
+    df['age'] = (df['age'] / 365).round().astype(int)
+
     return df
 
 
 def preprocess_data(df):
-    X = df.drop('target', axis=1)
-    y = df['target']
+    X = df.drop('cardio', axis=1)
+    y = df['cardio']
 
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(
@@ -33,12 +40,17 @@ def preprocess_data(df):
 
 def train_model(X_train, y_train):
     model = xgb.XGBClassifier(
-        n_estimators=100,
-        learning_rate=0.1,
-        max_depth=4,
-        use_label_encoder=False,
-        eval_metric='logloss',
-        random_state=42
+        n_estimators=300,
+        learning_rate=0.03,
+        max_depth=6,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        gamma=1,
+        reg_alpha=0.1,
+        reg_lambda=1,
+        random_state=42,
+        n_jobs=-1,
+        eval_metric='logloss'
     )
     model.fit(X_train, y_train)
     return model
@@ -54,9 +66,11 @@ def evaluate_model(model, X_test, y_test):
 
 
 def save_model(model, scaler):
-    joblib.dump(model, 'heart_disease_model.pkl')
-    joblib.dump(scaler, 'scaler.pkl')
-    print("Model and scaler saved.")
+    model_dir = "./model/heart"
+    os.makedirs(model_dir, exist_ok=True)
+    joblib.dump(model, os.path.join(model_dir, 'heart_disease_model.pkl'))
+    joblib.dump(scaler, os.path.join(model_dir, 'scaler.pkl'))
+    print("Model and scaler saved .")
 
 
 if __name__ == "__main__":
