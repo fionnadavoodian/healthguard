@@ -11,13 +11,10 @@ import os
 def load_data():
     df = pd.read_csv("cardio_train.csv", sep=';')
 
-    # Drop ID column if present
     if 'id' in df.columns:
         df.drop(columns=['id'], inplace=True)
 
-    # Convert age from days to years
     df['age'] = (df['age'] / 365).round().astype(int)
-
     return df
 
 
@@ -25,17 +22,19 @@ def preprocess_data(df):
     X = df.drop('cardio', axis=1)
     y = df['cardio']
 
-    # Split data
+    feature_names = X.columns.tolist()
+
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    # Scale features
     scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    X_train_scaled = pd.DataFrame(
+        scaler.fit_transform(X_train), columns=feature_names)
+    X_test_scaled = pd.DataFrame(
+        scaler.transform(X_test), columns=feature_names)
 
-    return X_train_scaled, X_test_scaled, y_train, y_test, scaler
+    return X_train_scaled, X_test_scaled, y_train, y_test, scaler, feature_names
 
 
 def train_model(X_train, y_train):
@@ -65,17 +64,19 @@ def evaluate_model(model, X_test, y_test):
     print(report)
 
 
-def save_model(model, scaler):
+def save_model(model, scaler, feature_names):
     model_dir = "./model/heart"
     os.makedirs(model_dir, exist_ok=True)
     joblib.dump(model, os.path.join(model_dir, 'heart_disease_model.pkl'))
     joblib.dump(scaler, os.path.join(model_dir, 'scaler.pkl'))
-    print("Model and scaler saved .")
+    joblib.dump(feature_names, os.path.join(model_dir, 'feature_names.pkl'))
+    print("Model, scaler, and feature names saved.")
 
 
 if __name__ == "__main__":
     df = load_data()
-    X_train, X_test, y_train, y_test, scaler = preprocess_data(df)
+    X_train, X_test, y_train, y_test, scaler, feature_names = preprocess_data(
+        df)
     model = train_model(X_train, y_train)
     evaluate_model(model, X_test, y_test)
-    save_model(model, scaler)
+    save_model(model, scaler, feature_names)

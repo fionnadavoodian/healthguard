@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Literal
 from typing import Optional
 
+
 app = FastAPI()
 
 app.add_middleware(
@@ -26,6 +27,23 @@ if not os.path.exists(pipeline_path):
 
 pipeline = joblib.load(pipeline_path)
 
+heart_model_path = "model/heart/heart_disease_model.pkl"
+heart_scaler_path = "model/heart/scaler.pkl"
+heart_features_path = "model/heart/feature_names.pkl"
+if not os.path.exists(heart_model_path):
+    raise RuntimeError(
+        f"Heart disease model not found at {heart_model_path}. Please train the model first.")
+if not os.path.exists(heart_scaler_path):
+    raise RuntimeError(
+        f"Heart disease scaler not found at {heart_scaler_path}. Please train the model first.")
+if not os.path.exists(heart_features_path):
+    raise RuntimeError(
+        f"Heart disease feature list not found at {heart_features_path}. Please train the model first.")
+
+model = joblib.load(heart_model_path)
+scaler = joblib.load(heart_scaler_path)
+feature_names = joblib.load(heart_features_path)
+
 
 class DiabetesData(BaseModel):
     gender: str
@@ -36,6 +54,20 @@ class DiabetesData(BaseModel):
     bmi: float
     HbA1c_level: float
     blood_glucose_level: int
+
+
+class HeartDiseaseData(BaseModel):
+    age: int  # in days
+    height: int  # in cm
+    weight: float  # in kg
+    gender: int  # categorical code
+    ap_hi: int  # systolic
+    ap_lo: int  # diastolic
+    cholesterol: int  # 1, 2, 3
+    gluc: int  # 1, 2, 3
+    smoke: int  # binary
+    alco: int  # binary
+    active: int  # binary
 
 
 @app.get("/health")
@@ -68,7 +100,6 @@ def predict_diabetes(data: DiabetesData):
         raise HTTPException(status_code=500, detail=f"Prediction error: {e}")
 
 
-# --- GASTRIC CANCER RISK MODEL ---
 WEIGHTS = {
     'hpylori': 0.9,
     'atrophic_gastritis': 0.8,
@@ -191,3 +222,43 @@ def assess_gastric_risk(data: GastricCancerData):
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Risk calculation error: {e}")
+
+
+@app.post("/heart-disease")
+def predict_heart_disease(data: HeartDiseaseData):
+    try:
+        age_years = int(round(data.age / 365))
+        bmi = data.weight / ((data.height / 100) ** 2)
+        pulse_pressure = data.ap_hi - data.ap_lo
+
+        input_dict = {
+            "age": age_years,
+            "height": data.height,
+            "weight": data.weight,
+            "gender": data.gender,
+            "ap_hi": data.ap_hi,
+            "ap_lo": data.ap_lo,
+            "cholesterol": data.cholesterol,
+            "gluc": data.gluc,
+            "smoke": data.smoke,
+            "alco": data.alco,
+            "active": data.active
+            # Include these only if they were used in training:
+            # "bmi": bmi,
+            # "pulse_pressure": pulse_pressure
+        }
+
+        input_df = pd.DataFrame([input_dict])
+        input_df = input_df[feature_names]  # enforce order and columns
+
+        input_scaled = scaler.transform(input_df)
+        prediction = model.predict(input_scaled)[0]
+        pred_proba = model.predict_proba(input_scaled)[0][1]
+
+        return {
+            "prediction": int(prediction),
+            "probability_of_heart_disease": round(float(pred_proba), 4)
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prediction error: {e}")

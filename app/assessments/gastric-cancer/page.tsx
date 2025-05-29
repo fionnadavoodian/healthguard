@@ -200,20 +200,23 @@ export default function GastricCancerForm() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col flex-grow min-h-0"
+      className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col flex-grow min-h-0
+                 bg-gray-50 text-gray-900"
     >
       <div className="flex-grow flex items-center justify-center p-4">
-        <Card className="w-full max-w-2xl p-6 space-y-6">
-          <h1 className="text-2xl font-bold text-center text-gray-800 dark:text-white">
+        <Card
+          className="w-full max-w-2xl p-8 space-y-6 shadow-xl rounded-lg bg-white" // Reduced space-y for tighter layout
+        >
+          <h1 className="text-3xl font-extrabold text-center text-gray-900">
             Gastric Cancer Risk Assessment
           </h1>
-          <p className="text-center text-gray-600 dark:text-gray-300">
+          <p className="text-center text-gray-600 text-lg">
             Please provide the following information to assess your gastric
             cancer risk.
           </p>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
+            className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6" // Reduced gap-y for tighter form fields
           >
             <Input
               label="Age"
@@ -221,16 +224,17 @@ export default function GastricCancerForm() {
               placeholder="e.g., 45"
               {...register("age", { required: true, valueAsNumber: true })}
               disabled={loading}
-              className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+              className="bg-white text-gray-900 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm p-3
+                         focus:ring-blue-600 focus:border-blue-600"
             />
             {errors.age && (
-              <p className="text-red-500 text-sm">Age is required.</p>
+              <p className="text-red-500 text-sm mt-1">Age is required.</p>
             )}
 
             <div>
               <label
                 htmlFor="gender"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Gender
               </label>
@@ -245,14 +249,14 @@ export default function GastricCancerForm() {
                 <option value="female">Female</option>
               </select>
               {errors.gender && (
-                <p className="text-red-500 text-sm">Gender is required.</p>
+                <p className="text-red-500 text-sm mt-1">Gender is required.</p>
               )}
             </div>
 
             <div className="md:col-span-2">
               <label
                 htmlFor="education"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Education Level
               </label>
@@ -277,7 +281,7 @@ export default function GastricCancerForm() {
             <div className="md:col-span-2">
               <label
                 htmlFor="family_history"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Family History
               </label>
@@ -299,7 +303,9 @@ export default function GastricCancerForm() {
               )}
             </div>
 
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mt-4 md:col-span-2">
+            <h3
+              className="text-xl font-semibold text-gray-800 mt-4 md:col-span-2" // Adjusted mt for tighter spacing
+            >
               Medical History
             </h3>
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
@@ -316,11 +322,11 @@ export default function GastricCancerForm() {
                     type="checkbox"
                     {...register(field as keyof GastricCancerFormData)}
                     disabled={loading}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
+                    className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <label
                     htmlFor={field}
-                    className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize"
+                    className="text-base font-medium text-gray-700 capitalize"
                   >
                     {field.replaceAll("_", " ")}
                   </label>
@@ -328,7 +334,9 @@ export default function GastricCancerForm() {
               ))}
             </div>
 
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mt-4 md:col-span-2">
+            <h3
+              className="text-xl font-semibold text-gray-800 mt-4 md:col-span-2" // Adjusted mt for tighter spacing
+            >
               Lifestyle Factors
             </h3>
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
@@ -338,11 +346,11 @@ export default function GastricCancerForm() {
                   type="checkbox"
                   {...register("smoking")}
                   disabled={loading}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
+                  className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label
                   htmlFor="smoking"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="text-base font-medium text-gray-700"
                 >
                   Smoking
                 </label>
@@ -352,7 +360,7 @@ export default function GastricCancerForm() {
                 <div className="col-span-full sm:col-span-1">
                   <label
                     htmlFor="pack_years_smoking"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    className="block text-sm font-medium text-gray-700 mb-1"
                   >
                     Smoking History
                   </label>
@@ -381,11 +389,11 @@ export default function GastricCancerForm() {
                   type="checkbox"
                   {...register("low_veg_fruit")}
                   disabled={loading}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
+                  className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label
                   htmlFor="low_veg_fruit"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="text-base font-medium text-gray-700"
                 >
                   Low Vegetable/Fruit Intake
                 </label>
@@ -397,11 +405,11 @@ export default function GastricCancerForm() {
                   type="checkbox"
                   {...register("high_salt_intake")}
                   disabled={loading}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
+                  className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label
                   htmlFor="high_salt_intake"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="text-base font-medium text-gray-700"
                 >
                   High Salt Intake
                 </label>
@@ -413,11 +421,11 @@ export default function GastricCancerForm() {
                   type="checkbox"
                   {...register("high_nitrate")}
                   disabled={loading}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
+                  className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label
                   htmlFor="high_nitrate"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="text-base font-medium text-gray-700"
                 >
                   High Nitrate Intake
                 </label>
@@ -425,16 +433,22 @@ export default function GastricCancerForm() {
             </div>
 
             {error && (
-              <div className="mt-4 text-center text-red-600 whitespace-pre-wrap">
+              <div
+                className="mt-4 text-center whitespace-pre-wrap p-3 rounded-md border
+                              bg-red-50 text-red-600 border-red-200"
+              >
                 {error}
               </div>
             )}
 
-            <div className="md:col-span-2 flex justify-center">
+            <div className="md:col-span-2 flex justify-center mt-4">
+              {" "}
+              {/* Adjusted mt for tighter spacing */}
               <LoadingButton
                 loading={loading}
                 type="submit"
-                className="w-full h-12 col-span-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                className="w-full h-14 col-span-full font-bold text-lg py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-75 transition-all duration-200 hover:opacity-90
+                           bg-blue-600 text-white focus:ring-blue-500 hover:bg-blue-700"
               >
                 Get Assessment
               </LoadingButton>
@@ -445,18 +459,24 @@ export default function GastricCancerForm() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className={`mt-6 p-4 rounded-lg text-center ${
+              className={`mt-8 p-6 rounded-lg text-center shadow-md ${
                 result.risk_category.toLowerCase() === "high risk"
-                  ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                  ? "bg-red-100 text-red-800"
                   : result.risk_category.toLowerCase() === "medium risk"
-                    ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
-                    : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    ? "bg-orange-100 text-orange-800"
+                    : "bg-green-100 text-green-800"
               }`}
             >
-              <h3 className="font-semibold text-lg">Assessment Result:</h3>
-              <p className="text-xl font-bold">{result.risk_category}</p>
-              <p>Risk Score: {result.score_percentage.toFixed(2)}%</p>
-              <p className="text-sm mt-2">
+              <h3 className="font-bold text-xl mb-2 text-gray-900">
+                Assessment Result:
+              </h3>
+              <p className="text-2xl font-extrabold mb-1 text-blue-600">
+                {result.risk_category}
+              </p>
+              <p className="text-lg text-gray-800">
+                Risk Score: {result.score_percentage.toFixed(2)}%
+              </p>
+              <p className="text-sm mt-4 text-gray-600">
                 This assessment provides a risk estimate. Please consult a
                 healthcare professional for diagnosis and personalized advice.
               </p>

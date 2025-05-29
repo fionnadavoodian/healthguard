@@ -52,6 +52,8 @@ def train_and_save_model(data_path='diabetes_prediction_dataset.csv', model_dir=
     accuracy = accuracy_score(y_test, y_pred)
     print(f"Accuracy: {accuracy:.4f}")
     print("Classification report:")
+    print(scaler.feature_names_in_)
+
     print(classification_report(y_test, y_pred))
 
     if not os.path.exists(model_dir):

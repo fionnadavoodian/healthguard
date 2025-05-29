@@ -1,332 +1,578 @@
-// app/assessments/gastric-cancer/page.tsx
 "use client";
-import { useForm } from "react-hook-form";
-import { useState } from "react";
-import { motion } from "framer-motion";
-import Card from "@/components/Card";
-import { Button } from "@/components/Button";
-import Input from "@/components/Input";
 
-interface GastricCancerFormData {
-  hpylori: boolean | "";
-  atrophic_gastritis: boolean | "";
-  peptic_ulcer: boolean | "";
-  gastric_surgery: boolean | "";
-  pernicious_anemia: boolean | "";
-  family_history: "non-relative" | "second-degree" | "first-degree" | "";
-  age: number | "";
-  gender: "male" | "female" | "";
-  education: "literacy" | "elementary" | "secondary" | "high educational" | "";
-  smoking: boolean | "";
-  pack_years_smoking: "never" | "ex-smoker" | "current smoker" | "";
-  low_veg_fruit: boolean | "";
-  high_salt_intake: boolean | "";
-  high_nitrate: boolean | "";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+// Assuming Card, Input, LoadingButton are correctly imported from your components directory
+import Card from "@/components/Card";
+import { Button } from "@/components/Button"; // Assuming Button is also a component
+import Input from "@/components/Input";
+import LoadingButton from "@/components/LoadingButton";
+import { useSupabaseAuth } from "@/providers/SupabaseAuthProvider";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+
+import { Database } from "@/types/supabase";
+
+// Define the new FormData interface for Cardiovascular Disease Assessment
+interface CardioFormData {
+  gender: "Female" | "Male" | "Other" | "";
+  age: number | ""; // Age in years (will be converted to days for backend)
+  height: number | ""; // Height in cm
+  weight: number | ""; // Weight in kg
+  ap_hi: number | ""; // Systolic blood pressure
+  ap_lo: number | ""; // Diastolic blood pressure
+  cholesterol: 1 | 2 | 3 | ""; // 1: normal, 2: above normal, 3: well above normal
+  gluc: 1 | 2 | 3 | ""; // 1: normal, 2: above normal, 3: well above normal
+  smoke: 0 | 1 | ""; // binary
+  alco: 0 | 1 | ""; // binary
+  active: 0 | 1 | ""; // binary
 }
 
-const selectClasses =
-  "mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400";
+// Define the PredictionResult interface for Cardiovascular Disease
+interface PredictionResult {
+  prediction: 0 | 1; // 0: No CVD, 1: CVD
+  probability_of_heart_disease: number; // Probability of having CVD
+  category: string; // "Low Risk", "Medium Risk", "High Risk"
+  message?: string;
+}
 
-export default function GastricCancerForm() {
-  const { register, handleSubmit, watch } = useForm<GastricCancerFormData>();
-  const [result, setResult] = useState<{
-    score_percentage: number;
-    risk_category: string;
-  } | null>(null);
+export default function CardioAssessmentPage() {
+  const router = useRouter();
+  const { user } = useSupabaseAuth();
+  const supabase = createClientComponentClient<Database>();
+
+  const [formData, setFormData] = useState<CardioFormData>({
+    gender: "",
+    age: "",
+    height: "",
+    weight: "",
+    ap_hi: "",
+    ap_lo: "",
+    cholesterol: "",
+    gluc: "",
+    smoke: "",
+    alco: "",
+    active: "",
+  });
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [predictionResult, setPredictionResult] =
+    useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const smoking = watch("smoking");
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) {
+        setProfileLoading(false);
+        return;
+      }
+      setProfileLoading(true);
+      try {
+        const { data, error: fetchError } = await supabase
+          .from("profiles")
+          .select("gender, date_of_birth, height, weight")
+          .eq("id", user.id)
+          .single();
 
-  const onSubmit = async (data: GastricCancerFormData) => {
-    setLoading(true);
-    setError(null);
-    setResult(null);
+        if (fetchError) {
+          console.error("Error fetching profile:", fetchError);
+          setError("Failed to load profile data.");
+        } else if (data) {
+          const profileData: Partial<CardioFormData> = {};
 
-    // Normalize smoking fields before submission
-    const cleanedData = {
-      ...data,
-      pack_years_smoking: data.smoking ? data.pack_years_smoking : "never",
+          if (data.gender) {
+            // Ensure gender matches expected types
+            const normalizedGender =
+              data.gender.charAt(0).toUpperCase() +
+              data.gender.slice(1).toLowerCase();
+            if (["Male", "Female", "Other"].includes(normalizedGender)) {
+              profileData.gender = normalizedGender as
+                | "Male"
+                | "Female"
+                | "Other";
+            }
+          }
+
+          if (data.date_of_birth) {
+            const birthDate = new Date(data.date_of_birth);
+            const today = new Date();
+            let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              calculatedAge--;
+            }
+            profileData.age = calculatedAge;
+          }
+
+          if (data.height !== null && data.height !== undefined) {
+            profileData.height = data.height;
+          }
+          if (data.weight !== null && data.weight !== undefined) {
+            profileData.weight = data.weight;
+          }
+
+          setFormData((prev) => ({
+            ...prev,
+            ...profileData,
+          }));
+        }
+      } catch (err) {
+        console.error("Unexpected error fetching profile:", err);
+        setError("An unexpected error occurred while loading profile.");
+      } finally {
+        setProfileLoading(false);
+      }
     };
 
+    fetchProfile();
+  }, [user, supabase]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        type === "number"
+          ? parseFloat(value) || ""
+          : type === "checkbox"
+            ? (e.target as HTMLInputElement).checked
+              ? 1
+              : 0
+            : value,
+    }));
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setPredictionResult(null);
+
+    const requiredFields: (keyof CardioFormData)[] = [
+      "gender",
+      "age",
+      "height",
+      "weight",
+      "ap_hi",
+      "ap_lo",
+      "cholesterol",
+      "gluc",
+      "smoke",
+      "alco",
+      "active",
+    ];
+    for (const field of requiredFields) {
+      if (
+        formData[field] === "" ||
+        formData[field] === null ||
+        (typeof formData[field] === "number" &&
+          isNaN(formData[field] as number))
+      ) {
+        setError(`Please fill in the '${field.replace(/_/g, " ")}' field.`);
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
-      // Step 1: Get prediction from your FastAPI backend
-      const predictionRes = await fetch(
-        "http://localhost:8000/gastric-cancer",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cleanedData),
-        }
-      );
+      // Map gender string to numerical value: Female = 1, Male = 2 (common for this dataset)
+      // If "Other" is selected, default to Female's value (1) or handle as per backend's expectation
+      let genderValue: number | null = null;
+      if (formData.gender === "Female") {
+        genderValue = 1;
+      } else if (formData.gender === "Male") {
+        genderValue = 2;
+      } else {
+        // If "Other" or empty, default to 1 (Female) to avoid null if backend expects 1 or 2
+        genderValue = 1;
+      }
 
-      const predictionJson = await predictionRes.json();
+      const dataToSend = {
+        ...formData,
+        gender: genderValue, // Send the mapped numerical gender
+        age: Math.floor(Number(formData.age) * 365.25), // Convert age from years to days and ensure it's an integer
+        height: Number(formData.height),
+        weight: Number(formData.weight),
+        ap_hi: Number(formData.ap_hi),
+        ap_lo: Number(formData.ap_lo),
+        cholesterol: Number(formData.cholesterol),
+        gluc: Number(formData.gluc),
+        smoke: Number(formData.smoke),
+        alco: Number(formData.alco),
+        active: Number(formData.active),
+      };
 
-      if (!predictionRes.ok) {
-        let errorMessage = "An unexpected error occurred during prediction.";
-        if (Array.isArray(predictionJson.detail)) {
-          errorMessage = predictionJson.detail
-            .map((e: any) => `${e.loc?.join(".")}: ${e.msg}`)
-            .join("\n");
-        } else if (typeof predictionJson.detail === "string") {
-          errorMessage = predictionJson.detail;
-        } else if (predictionJson.message) {
-          errorMessage = predictionJson.message;
+      // Ensure all fields are numbers and not null/empty for the backend
+      // This loop catches any remaining non-numeric or empty values after initial checks and conversions
+      for (const key in dataToSend) {
+        const value = dataToSend[key as keyof typeof dataToSend];
+        if (
+          value === null ||
+          value === null ||
+          (typeof value === "number" && isNaN(value))
+        ) {
+          setError(
+            `Invalid or missing value for field: ${key.replace(/_/g, " ")}. Please ensure all fields are valid.`
+          );
+          setLoading(false);
+          return;
         }
-        setError(errorMessage);
+      }
+
+      const response = await fetch("http://localhost:8000/heart-disease", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataToSend),
+      });
+
+      const data: PredictionResult = await response.json();
+
+      if (!response.ok) {
+        // If backend returns a 422, it often includes details in `data.detail`
+        const backendErrorDetail = (data as any)?.detail
+          ? Array.isArray((data as any).detail)
+            ? (data as any).detail
+                .map((d: any) => `${d.loc?.join(".")} - ${d.msg}`)
+                .join("\n")
+            : (data as any).detail
+          : JSON.stringify(data);
+
+        setError(
+          `Prediction failed (Status: ${response.status}). Details: ${backendErrorDetail}`
+        );
+        setLoading(false);
         return;
       }
 
-      setResult(predictionJson);
+      if (
+        data &&
+        data.prediction !== undefined &&
+        data.probability_of_heart_disease !== undefined
+      ) {
+        const prediction = data.prediction;
+        const probability = data.probability_of_heart_disease;
+        let category = "Low Risk";
 
-      // Step 2: Save form data + prediction result to your database via Next.js API route
-      const saveRes = await fetch("/api/save-gastric-assessment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...cleanedData,
-          prediction_score: predictionJson.score_percentage,
-          prediction_category: predictionJson.risk_category,
-        }),
-      });
+        if (prediction === 1) {
+          // Assuming 1 means CVD is present
+          category = "High Risk";
+        } else if (probability >= 0.5) {
+          // Adjust threshold as needed for Medium Risk
+          category = "Medium Risk";
+        }
 
-      const saveJson = await saveRes.json();
-
-      if (!saveRes.ok) {
-        console.error("Error saving assessment to DB:", saveJson.error);
-        // You might want to display a different error or just log this,
-        // as the prediction was successful
-        setError(
-          (prev) =>
-            (prev ? prev + "\n" : "") + "Failed to save assessment to database."
-        );
+        setPredictionResult({
+          prediction,
+          probability_of_heart_disease: probability,
+          category,
+          message: data.message,
+        });
       } else {
-        console.log("Assessment saved successfully:", saveJson.data);
+        setError("Prediction data from the server is incomplete.");
       }
-    } catch (err) {
-      console.error("Error during assessment submission or saving", err);
-      setError("Network error or server unavailable. Please try again.");
+    } catch (err: any) {
+      console.error("Frontend: Error during fetch operation:", err);
+      setError(
+        err.message ||
+          "Network error or server unavailable. Please check your connection or if the server is running."
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  if (profileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-gray-700">
+        <p className="text-lg">Loading profile data...</p>
+      </div>
+    );
+  }
+
+  // Common Tailwind classes for select elements
+  const selectClasses = `mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white text-gray-900 placeholder-gray-400`;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col flex-grow min-h-0"
+      className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col flex-grow min-h-0
+                 bg-gray-50 text-gray-900"
     >
       <div className="flex-grow flex items-center justify-center p-4">
-        <Card className="w-full max-w-2xl p-6 space-y-6">
-          <h1 className="text-2xl font-bold text-center text-gray-800 dark:text-white">
-            Gastric Cancer Risk Assessment
+        <Card className="w-full max-w-lg p-8 space-y-6 shadow-xl rounded-lg bg-white">
+          <h1 className="text-3xl font-extrabold text-center text-gray-900">
+            Cardiovascular Disease Risk Assessment
           </h1>
-          <p className="text-center text-gray-600 dark:text-gray-300">
-            Please provide the following information to assess your gastric
-            cancer risk.
+          <p className="text-center text-gray-600 text-lg">
+            Provide your health information to get a cardiovascular disease risk
+            prediction.
           </p>
+
           <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit}
             className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
           >
-            <Input
-              label="Age"
-              type="number"
-              placeholder="e.g., 45"
-              {...register("age", { required: true, valueAsNumber: true })}
-              disabled={loading}
-              className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
-            />
-
+            {/* Gender */}
             <div>
               <label
                 htmlFor="gender"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-gray-700"
               >
                 Gender
               </label>
               <select
                 id="gender"
-                {...register("gender", { required: true })}
-                disabled={loading}
-                className={selectClasses}
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                required
+                disabled={!!formData.gender} // Disable if fetched from profile
+                className={`${selectClasses} ${
+                  !!formData.gender ? "bg-gray-100 cursor-not-allowed" : ""
+                }`}
               >
                 <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Other">Other</option>
               </select>
             </div>
 
-            <div className="md:col-span-2">
+            {/* Age */}
+            <Input
+              label="Age (Years)"
+              type="number"
+              name="age"
+              value={formData.age}
+              onChange={handleChange}
+              placeholder="e.g., 35"
+              required
+              readOnly={!!formData.age} // Read-only if fetched from profile
+              className={`${
+                !!formData.age ? "bg-gray-100 cursor-not-allowed" : ""
+              }`}
+            />
+
+            {/* Height */}
+            <Input
+              label="Height (cm)"
+              type="number"
+              name="height"
+              value={formData.height}
+              onChange={handleChange}
+              placeholder="e.g., 170"
+              step="1"
+              required
+              readOnly={!!formData.height} // Read-only if fetched from profile
+              className={`${
+                !!formData.height ? "bg-gray-100 cursor-not-allowed" : ""
+              }`}
+            />
+
+            {/* Weight */}
+            <Input
+              label="Weight (kg)"
+              type="number"
+              name="weight"
+              value={formData.weight}
+              onChange={handleChange}
+              placeholder="e.g., 70.5"
+              step="0.1"
+              required
+              readOnly={!!formData.weight} // Read-only if fetched from profile
+              className={`${
+                !!formData.weight ? "bg-gray-100 cursor-not-allowed" : ""
+              }`}
+            />
+
+            {/* Systolic Blood Pressure */}
+            <Input
+              label="Systolic BP (ap_hi)"
+              type="number"
+              name="ap_hi"
+              value={formData.ap_hi}
+              onChange={handleChange}
+              placeholder="e.g., 120"
+              required
+            />
+
+            {/* Diastolic Blood Pressure */}
+            <Input
+              label="Diastolic BP (ap_lo)"
+              type="number"
+              name="ap_lo"
+              value={formData.ap_lo}
+              onChange={handleChange}
+              placeholder="e.g., 80"
+              required
+            />
+
+            {/* Cholesterol */}
+            <div>
               <label
-                htmlFor="education"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                htmlFor="cholesterol"
+                className="block text-sm font-medium text-gray-700"
               >
-                Education Level
+                Cholesterol
               </label>
               <select
-                id="education"
-                {...register("education", { required: true })}
-                disabled={loading}
+                id="cholesterol"
+                name="cholesterol"
+                value={formData.cholesterol}
+                onChange={handleChange}
+                required
                 className={selectClasses}
               >
-                <option value="">Select Education Level</option>
-                <option value="literacy">Literacy</option>
-                <option value="elementary">Elementary</option>
-                <option value="secondary">Secondary</option>
-                <option value="high educational">High Educational</option>
+                <option value="">Select Level</option>
+                <option value={1}>Normal</option>
+                <option value={2}>Above Normal</option>
+                <option value={3}>Well Above Normal</option>
               </select>
             </div>
 
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mt-4 md:col-span-2">
-              Medical History
-            </h3>
-            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-              {[
-                "hpylori",
-                "atrophic_gastritis",
-                "peptic_ulcer",
-                "gastric_surgery",
-                "pernicious_anemia",
-              ].map((field) => (
-                <div key={field} className="flex items-center space-x-2">
-                  <input
-                    id={field}
-                    type="checkbox"
-                    {...register(field as keyof GastricCancerFormData)}
-                    disabled={loading}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
-                  />
-                  <label
-                    htmlFor={field}
-                    className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize"
-                  >
-                    {field.replaceAll("_", " ")}
-                  </label>
-                </div>
-              ))}
-            </div>
-
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mt-4 md:col-span-2">
-              Lifestyle Factors
-            </h3>
-            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  id="smoking"
-                  type="checkbox"
-                  {...register("smoking")}
-                  disabled={loading}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
-                />
-                <label
-                  htmlFor="smoking"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Smoking
-                </label>
-              </div>
-
-              {smoking && (
-                <div className="col-span-full sm:col-span-1">
-                  <label
-                    htmlFor="pack_years_smoking"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Smoking History
-                  </label>
-                  <select
-                    id="pack_years_smoking"
-                    {...register("pack_years_smoking", { required: smoking })}
-                    disabled={loading}
-                    className={selectClasses}
-                  >
-                    <option value="">Select Smoking Status</option>
-                    <option value="never">Never</option>
-                    <option value="ex-smoker">Ex-smoker</option>
-                    <option value="current smoker">Current Smoker</option>
-                  </select>
-                </div>
-              )}
-
-              {["low_veg_fruit", "high_salt_intake", "high_nitrate"].map(
-                (field) => (
-                  <div key={field} className="flex items-center space-x-2">
-                    <input
-                      id={field}
-                      type="checkbox"
-                      {...register(field as keyof GastricCancerFormData)}
-                      disabled={loading}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:checked:bg-blue-500"
-                    />
-                    <label
-                      htmlFor={field}
-                      className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize"
-                    >
-                      {field.replaceAll("_", " ")}
-                    </label>
-                  </div>
-                )
-              )}
-            </div>
-
-            <div className="md:col-span-2">
+            {/* Glucose */}
+            <div>
               <label
-                htmlFor="family_history"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                htmlFor="gluc"
+                className="block text-sm font-medium text-gray-700"
               >
-                Family History of Gastric Cancer
+                Glucose
               </label>
               <select
-                id="family_history"
-                {...register("family_history", { required: true })}
-                disabled={loading}
+                id="gluc"
+                name="gluc"
+                value={formData.gluc}
+                onChange={handleChange}
+                required
                 className={selectClasses}
               >
-                <option value="">Select Family History</option>
-                <option value="non-relative">No close relatives</option>
-                <option value="second-degree">Second-degree relative</option>
-                <option value="first-degree">First-degree relative</option>
+                <option value="">Select Level</option>
+                <option value={1}>Normal</option>
+                <option value={2}>Above Normal</option>
+                <option value={3}>Well Above Normal</option>
+              </select>
+            </div>
+
+            {/* Smoking */}
+            <div>
+              <label
+                htmlFor="smoke"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Smoking
+              </label>
+              <select
+                id="smoke"
+                name="smoke"
+                value={formData.smoke}
+                onChange={handleChange}
+                required
+                className={selectClasses}
+              >
+                <option value="">Select</option>
+                <option value={0}>No</option>
+                <option value={1}>Yes</option>
+              </select>
+            </div>
+
+            {/* Alcohol Intake */}
+            <div>
+              <label
+                htmlFor="alco"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Alcohol Intake
+              </label>
+              <select
+                id="alco"
+                name="alco"
+                value={formData.alco}
+                onChange={handleChange}
+                required
+                className={selectClasses}
+              >
+                <option value="">Select</option>
+                <option value={0}>No</option>
+                <option value={1}>Yes</option>
+              </select>
+            </div>
+
+            {/* Physical Activity */}
+            <div>
+              <label
+                htmlFor="active"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Physical Activity
+              </label>
+              <select
+                id="active"
+                name="active"
+                value={formData.active}
+                onChange={handleChange}
+                required
+                className={selectClasses}
+              >
+                <option value="">Select</option>
+                <option value={0}>No</option>
+                <option value={1}>Yes</option>
               </select>
             </div>
 
             {error && (
-              <p className="text-red-500 text-sm text-center col-span-full whitespace-pre-line">
+              <p className="text-red-500 text-sm text-center col-span-full">
                 {error}
               </p>
             )}
 
-            <Button
+            <LoadingButton
               type="submit"
-              isLoading={loading}
+              loading={loading}
               className="w-full h-12 col-span-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             >
-              Get Assessment
-            </Button>
+              Get Prediction
+            </LoadingButton>
           </form>
 
-          {result && (
+          {predictionResult && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
               className={`mt-6 p-4 rounded-lg text-center ${
-                result.risk_category === "High Risk"
-                  ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                  : result.risk_category === "Medium Risk"
-                    ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
-                    : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                predictionResult.category === "High Risk"
+                  ? "bg-red-100 text-red-800"
+                  : predictionResult.category === "Medium Risk"
+                    ? "bg-orange-100 text-orange-800"
+                    : "bg-green-100 text-green-800"
               }`}
             >
-              <h3 className="font-semibold text-lg">Assessment Result:</h3>
-              <p className="text-xl font-bold">{result.risk_category}</p>
-              <p>Risk Score: {result.score_percentage.toFixed(2)}%</p>
-              <p className="text-sm mt-2">
-                This assessment provides a risk estimate. Please consult a
-                healthcare professional for diagnosis and personalized advice.
+              <h3 className="font-semibold text-lg">Prediction Result:</h3>
+              <p className="text-xl font-bold">{predictionResult.category}</p>
+              <p>
+                Probability of CVD:{" "}
+                {(
+                  Number(predictionResult.probability_of_heart_disease) * 100
+                ).toFixed(2)}
+                %
               </p>
+              <p className="text-sm mt-2">
+                This prediction is based on the provided data and our model's
+                assessment. Please consult a healthcare professional for
+                diagnosis and personalized advice.
+              </p>
+              {/* Assuming Button component exists and works with router.push */}
+              <Button onClick={() => router.push("/account")} className="mt-4">
+                Back to Dashboard
+              </Button>
             </motion.div>
           )}
         </Card>

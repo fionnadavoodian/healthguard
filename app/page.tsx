@@ -43,6 +43,7 @@ export default function Home() {
                 Start Free Assessment
               </Button>
               <Button
+                onClick={() => router.push("/how-it-works")}
                 variant="bordered"
                 className="border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-700"
                 size="xl"
