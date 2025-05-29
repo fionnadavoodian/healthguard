@@ -1,4 +1,3 @@
-// app/how-it-works/page.tsx
 import React from "react";
 
 const HowItWorksPage = () => {
@@ -22,8 +21,7 @@ const HowItWorksPage = () => {
           </a>{" "}
           from Kaggle.
         </p>
-        <p className="mb-2"> </p>
-        The model uses key features like:
+        <p className="mb-2">The model uses key features like:</p>
         <ul className="list-disc list-inside ml-4">
           <li>Gender</li>
           <li>Age</li>
@@ -34,9 +32,10 @@ const HowItWorksPage = () => {
           <li>Hypertension and Heart Disease status</li>
         </ul>
         <p className="mb-2">
-          A logistic regression model is trained with preprocessing using
-          scaling and one-hot encoding. The output includes a prediction (0 or
-          1) and the probability of having diabetes.
+          A logistic regression model is trained after preprocessing data with
+          scaling and one-hot encoding. This classical ML approach is
+          interpretable and efficient for tabular medical data. The output
+          includes a binary prediction and probability of having diabetes.
         </p>
       </section>
 
@@ -66,9 +65,11 @@ const HowItWorksPage = () => {
           <li>Smoking, Alcohol, and Physical Activity status</li>
         </ul>
         <p className="mb-2">
-          A deep learning model is trained using TensorFlow with dropout layers
-          and early stopping. Output includes the binary prediction and
-          probability of heart disease.
+          This model uses XGBoost, a powerful gradient boosting framework, with
+          carefully tuned hyperparameters and standardized features via scaling.
+          XGBoost is well-suited for tabular data and handles non-linear
+          relationships effectively. The output includes a binary prediction and
+          performance metrics such as accuracy and classification report.
         </p>
       </section>
 
@@ -77,9 +78,8 @@ const HowItWorksPage = () => {
           🧪 Gastric Cancer Risk Estimation
         </h2>
         <p className="mb-2">
-          This tool estimates the risk of developing gastric cancer based on a
-          weighted risk factor model derived from medical research, specifically
-          a paper from{" "}
+          This tool estimates gastric cancer risk using a weighted risk factor
+          model derived from medical research, specifically from a paper by{" "}
           <a
             href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5869226/"
             className="text-blue-600 underline"
@@ -90,21 +90,22 @@ const HowItWorksPage = () => {
           </a>
           .
         </p>
+        <p className="mb-2">Factors include:</p>
+        <ul className="list-disc list-inside ml-4">
+          <li>H. Pylori infection</li>
+          <li>Atrophic Gastritis</li>
+          <li>Gastric Surgery or Peptic Ulcer history</li>
+          <li>Family History (first/second-degree)</li>
+          <li>Age, Gender, Education Level</li>
+          <li>Smoking status and Pack Years</li>
+          <li>Dietary risks: low fruit/veg, high salt, nitrate intake</li>
+        </ul>
         <p className="mb-2">
-          Factors include:
-          <ul className="list-disc list-inside ml-4">
-            <li>H. Pylori infection</li>
-            <li>Atrophic Gastritis</li>
-            <li>Gastric Surgery or Peptic Ulcer history</li>
-            <li>Family History (first/second-degree)</li>
-            <li>Age, Gender, Education Level</li>
-            <li>Smoking status and Pack Years</li>
-            <li>Dietary risks: low fruit/veg, high salt, nitrate intake</li>
-          </ul>
-        </p>
-        <p className="mb-2">
-          A weighted score is calculated, normalized to a percentage, and
-          categorized as Low, Moderate, or High risk.
+          The weighted risk factors were computed and optimized using a fuzzy
+          inference system implemented in MATLAB. This approach combines expert
+          knowledge with statistical weighting to handle uncertainty in risk
+          assessment. The model calculates a normalized risk score, categorizing
+          patients into Low, Moderate, or High risk groups.
         </p>
       </section>
 

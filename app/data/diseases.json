@@ -2,7 +2,7 @@
   {
     "id": 1,
     "title": "Gastric Cancer Expert System",
-    "description": "A Mamdani fuzzy inference system implemented in MATLAB, utilizing 67 expert-defined rules to assess gastric cancer risk levels. The system processes 13 clinical risk factors to classify individuals into different risk categories, facilitating early detection and treatment.",
+    "description": "A Mamdani-type fuzzy inference system developed in MATLAB to estimate the risk of gastric cancer. It incorporates 67 expert-defined rules and evaluates 13 clinically relevant risk factors including dietary habits, smoking, family history, and Helicobacter pylori infection. The system offers early detection insights by categorizing patients into Low, Moderate, or High risk groups.",
     "banner": "/gastricCancer.svg",
     "performance": {
       "sensitivity": "92.1%",
@@ -21,41 +21,41 @@
     ]
   },
   {
-  "id": 2,
-  "title": "Diabetes Expert System",
-  "description": "A machine learning-based expert system for early diagnosis of diabetes, trained on the Diabetes Prediction Dataset from Kaggle. The model leverages a rule-enhanced pipeline with feature engineering and classification optimization to ensure high accuracy. It demonstrates robust generalization capabilities, making it a reliable support tool for clinical decision-making.",
-  "banner": "/diabetes.svg",
-  "performance": {
-    "accuracy": "96.05%",
-    "precision": {
-      "class_0": "97%",
-      "class_1": "86%"
+    "id": 2,
+    "title": "Diabetes Expert System",
+    "description": "A hybrid machine learning system trained on the Diabetes Prediction Dataset from Kaggle. The model integrates logistic regression with feature engineering and one-hot encoding for categorical variables. It predicts diabetes risk using key health indicators such as HbA1c, BMI, blood glucose, and medical history. Performance is benchmarked for high clinical relevance.",
+    "banner": "/diabetes.svg",
+    "performance": {
+      "accuracy": "96.05%",
+      "precision": {
+        "class_0": "97%",
+        "class_1": "86%"
+      },
+      "recall": {
+        "class_0": "99%",
+        "class_1": "64%"
+      },
+      "f1_score": {
+        "class_0": "98%",
+        "class_1": "73%"
+      },
+      "dataset": "Diabetes Prediction Dataset (Kaggle)"
     },
-    "recall": {
-      "class_0": "99%",
-      "class_1": "64%"
-    },
-    "f1_score": {
-      "class_0": "98%",
-      "class_1": "73%"
-    },
-    "dataset": "Diabetes Prediction Dataset (Kaggle)"
+    "resources": [
+      {
+        "type": "Kaggle",
+        "url": "https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset?resource=download"
+      },
+      {
+        "type": "MDPI",
+        "url": "https://www.mdpi.com/1424-8220/21/23/8095"
+      }
+    ]
   },
-  "resources": [
-    {
-      "type": "Kaggle",
-      "url": "https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset?resource=download"
-    },
-    {
-      "type": "MDPI",
-      "url": "https://www.mdpi.com/1424-8220/21/23/8095"
-    }
-  ]
-},
   {
     "id": 3,
     "title": "Heart Disease Expert System",
-    "description": "A Mamdani fuzzy inference system designed to diagnose heart disease by analyzing key cardiovascular indicators. The system integrates clinician-validated IF-THEN rules to provide accurate and cost-effective prognosis.",
+    "description": "A fuzzy rule-based diagnostic system designed for heart disease prediction. Built using the Mamdani inference method, it evaluates cardiovascular health based on factors like blood pressure, cholesterol levels, and lifestyle habits. Developed with the UCI Cleveland dataset, the system is optimized for interpretability and clinical decision support.",
     "banner": "/heartDisease.svg",
     "performance": {
       "accuracy": "98.08%",
