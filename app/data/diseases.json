@@ -45,31 +45,24 @@
       {
         "type": "Kaggle",
         "url": "https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset?resource=download"
-      },
-      {
-        "type": "MDPI",
-        "url": "https://www.mdpi.com/1424-8220/21/23/8095"
       }
+     
     ]
   },
   {
-    "id": 3,
-    "title": "Heart Disease Expert System",
-    "description": "A fuzzy rule-based diagnostic system designed for heart disease prediction. Built using the Mamdani inference method, it evaluates cardiovascular health based on factors like blood pressure, cholesterol levels, and lifestyle habits. Developed with the UCI Cleveland dataset, the system is optimized for interpretability and clinical decision support.",
-    "banner": "/heartDisease.svg",
-    "performance": {
-      "accuracy": "98.08%",
-      "dataset": "UCI Cleveland Dataset"
-    },
-    "resources": [
-      {
-        "type": "PLOS",
-        "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0293112"
-      },
-      {
-        "type": "PubMed",
-        "url": "https://pubmed.ncbi.nlm.nih.gov/38319925/"
-      }
+  "id": 3,
+  "title": "Heart Disease Expert System",
+  "description": "This machine learning-based heart disease prediction system leverages XGBoost, a robust gradient boosting algorithm. It has been trained using the UCI Cleveland dataset with hyperparameter tuning and feature scaling to ensure high performance and reliability. The model is designed to support binary classification for clinical decision-making and includes output metrics like accuracy and classification reports.",
+  "banner": "/heartDisease.svg",
+  "performance": {
+    "accuracy": "98.08%",
+    "dataset": "UCI Cleveland Dataset"
+  },
+  "resources": [
+    {
+      "type": "Kaggle",
+      "url": "https://www.kaggle.com/datasets/sulianova/cardiovascular-disease-dataset/data"
+    }
     ]
   }
 ]
